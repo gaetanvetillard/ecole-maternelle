@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { H1, H2, H3 } from "../../Styles/Titles";
 
-import {Grid} from "@material-ui/core"
+import {Button, Grid} from "@material-ui/core"
 import Navbar from "../../Components/Navbar";
 import { LoadingItem, LoadingPage } from "../../Components/Loading";
 import { BlocPage, ListItemDiv, WrapperDiv } from "../../Styles/Divs";
@@ -54,6 +54,32 @@ const ManageClassroom = props => {
   }, [props.history, props.match.params.classroom_id])
 
 
+	const handleDeleteClassroom = () => {
+		let confirmation = window.confirm(`Vous êtes sur le point de supprimer la classe de ${classroomInfos.teachers[0].firstname} ${classroomInfos.teachers[0].name}. Cette action ne supprimera pas les comptes reliées à cette classe. Êtes-vous sûr de vouloir continuer ?`)
+		if (confirmation) {
+			let requestParams = {
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({
+					classroom_id: props.match.params.classroom_id
+				})
+			}
+
+			fetch('/api/admin/delete_classroom', requestParams)
+				.then(res => {
+					if (res.ok) {
+						props.history.push('/admin/classrooms')
+					} else {
+						res.json()
+							.then(data => {
+								alert(data['Error'])
+							})
+					}
+				}) 
+		} else {
+			return
+		}
+	}
 
 
 
@@ -82,7 +108,7 @@ const ManageClassroom = props => {
 										<Grid item xs={12} align="center">
 											{studentsList.length > 0 && studentsList.map(
 												student => 
-													<ListItemDiv key={student.id}>
+													<ListItemDiv key={student.id} onClick={() => props.history.push(`/admin/users/${student.id}`)}>
 														<p>{student.name} {student.firstname}</p>
 														<ChevronRight />
 													</ListItemDiv>
@@ -109,8 +135,8 @@ const ManageClassroom = props => {
 									<YellowDividerH2 />
 									<WrapperDiv>
 										<Grid container>
-											<Grid item xs={6} align="center">
-												<WrapperDiv style={{marginRight: 10}}>
+											<Grid item md={6} xs={12} align="center">
+												<WrapperDiv style={{margin: "5px"}}>
 													<H3>Changer de maître(sse)</H3>
 													<AddFormAdminVersion 
 														url='/api/admin/transfer_classroom' 
@@ -119,14 +145,14 @@ const ManageClassroom = props => {
 														setFreeList={(newList) => setClassroomInfos(prev => {return {...prev, free_teachers: newList}})} 
 														setList={setTeachers}
 														classroom_id={classroomInfos.id}
-														helperText="Aucun(e) maître(sse) disponible."
-														buttonText="Changer de maître(sse)"
+														helperText="Aucun·e maître·sse disponible."
+														buttonText="Changer de maître·sse"
 														/>
 												</WrapperDiv>
 											</Grid>
 
-											<Grid item xs={6} align="center">
-												<WrapperDiv style={{marginLeft: 10}}>
+											<Grid item md={6} xs={12} align="center">
+												<WrapperDiv style={{margin: "5px"}}>
 													<H3>Ajouter un élève</H3>
 													<AddFormAdminVersion 
 														url='/api/admin/add_student' 
@@ -140,6 +166,14 @@ const ManageClassroom = props => {
 													/>
 												</WrapperDiv>
 											</Grid>
+										</Grid>
+									
+										<Grid item xs={12} align="center" style={{padding: 5}}>
+											<Button
+												variant="contained"
+												style={{borderRadius: 10, width: "100%"}}
+												onClick={handleDeleteClassroom}
+											>Supprimer la classe</Button>
 										</Grid>
 									</WrapperDiv>
 								</Grid>

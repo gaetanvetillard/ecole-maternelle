@@ -14,7 +14,7 @@ const SkillsListTeacher = props => {
         </Grid>
       </Grid>
 
-      <Navbar />
+      <Navbar {...props} />
     </>
   )
 };

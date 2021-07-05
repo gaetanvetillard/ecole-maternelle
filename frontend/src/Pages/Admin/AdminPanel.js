@@ -8,7 +8,7 @@ import { WrapperDiv, BlocPage } from "../../Styles/Divs";
 import {LoadingPage} from '../../Components/Loading';
 import { YellowDividerH2 } from "../../Styles/Dividers";
 import { H1, H2, H3 } from "../../Styles/Titles";
-import { Save } from "@material-ui/icons";
+import { ChevronRight, Save } from "@material-ui/icons";
 
 
 const AdminPanel = props => {
@@ -88,8 +88,8 @@ const AdminPanel = props => {
                   <YellowDividerH2 />
                   <WrapperDiv>
                     <Grid container>
-                      <Grid item xs={6} align="center">
-                        <WrapperDiv style={{marginRight: 5}}>
+                      <Grid item xs={12} md={6} align="center">
+                        <WrapperDiv style={{margin: 5}}>
                           <H3>Nom :</H3>
                           <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
                             <InfosInput defaultValue={schoolInfos.name} type="text" onChange={e => setNewName(e.target.value)} autoComplete="none"/>
@@ -101,8 +101,8 @@ const AdminPanel = props => {
                           </div>    
                         </WrapperDiv>
                       </Grid>
-                      <Grid item xs={6} align="center">
-                        <WrapperDiv style={{marginLeft: 5}}>
+                      <Grid item xs={12} md={6} align="center">
+                        <WrapperDiv style={{margin: 5}}>
                           <H3>Adresse :</H3>
                           <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
                             <InfosInput defaultValue={schoolInfos.address} type="text" onChange={e => setNewAddress(e.target.value)} autoComplete="none"/>
@@ -114,8 +114,8 @@ const AdminPanel = props => {
                           </div>  
                         </WrapperDiv>
                       </Grid>
-                      <Grid item xs={6} align="center">
-                        <WrapperDiv style={{marginRight: 5}}>
+                      <Grid item xs={12} md={6} align="center">
+                        <WrapperDiv style={{margin: 5}}>
                           <H3>Code postal :</H3>
                           <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
                             <InfosInput defaultValue={schoolInfos.zipcode} type="text" onChange={e => setNewZipCode(e.target.value)} autoComplete="none"/>
@@ -127,8 +127,8 @@ const AdminPanel = props => {
                           </div>
                         </WrapperDiv>
                       </Grid>
-                      <Grid item xs={6} align="center">
-                        <WrapperDiv style={{marginLeft: 5}}>
+                      <Grid item xs={12} md={6} align="center">
+                        <WrapperDiv style={{margin: 5}}>
                           <H3>Ville :</H3>
                           <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
                             <InfosInput defaultValue={schoolInfos.city} type="text" onChange={e => setNewCity(e.target.value)} autoComplete="none"/>
@@ -157,18 +157,22 @@ const AdminPanel = props => {
                   <YellowDividerH2 />
                 </Grid>
                 <Grid item xs={6} align="center" style={{padding: "0 5px 0 0"}}>
-                  <WrapperDiv>
-                    <H3>Nombre de classes</H3>
+                  <WrapperDiv style={{cursor: "pointer"}} onClick={() => props.history.push('/admin/classrooms')}>
+                    <H3 style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                      Nombre de classes <ChevronRight />
+                    </H3>
                     <WrapperDiv>
                       <H1>{schoolInfos.classrooms_count}</H1>
                     </WrapperDiv>
                   </WrapperDiv>
                 </Grid>
                 <Grid item xs={6} align="center" style={{padding: "0 0 0 5px"}}>
-                  <WrapperDiv>
-                    <H3>Nombre d'élèves</H3>
+                  <WrapperDiv style={{cursor: "pointer"}} onClick={() => props.history.push('/admin/users')}>
+                    <H3 style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                      Nombre d'utilisateurs <ChevronRight />
+                    </H3>
                     <WrapperDiv>
-                      <H1>{schoolInfos.students_count}</H1>
+                      <H1>{schoolInfos.users_count}</H1>
                     </WrapperDiv>
                   </WrapperDiv>
                 </Grid>
@@ -203,7 +207,7 @@ const AdminPanel = props => {
 };
 
 
-const InfosInput = styled.input`
+export const InfosInput = styled.input`
   text-align: center;
   font-size: 16px;
   outline: none;

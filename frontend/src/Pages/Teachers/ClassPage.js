@@ -14,7 +14,7 @@ const ClassPage = props => {
         </Grid>
       </Grid>
 
-      <Navbar />
+      <Navbar {...props} />
     </>
   )
 };

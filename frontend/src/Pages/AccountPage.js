@@ -1,16 +1,16 @@
 import React from "react";
-import { H1 } from "../../Styles/Titles";
+import { H1 } from "../Styles/Titles";
 
 import {Grid} from "@material-ui/core"
-import Navbar from "../../Components/Navbar";
+import Navbar from "../Components/Navbar";
 
-const ManageSkills = props => {
+const AccountPage = props => {
 
   return (
     <>
       <Grid container>
         <Grid item align="center" xs={12}>
-          <H1>Gestion des compétences</H1>
+          <H1>Votre compte</H1>
         </Grid>
       </Grid>
 
@@ -19,4 +19,4 @@ const ManageSkills = props => {
   )
 };
 
-export default ManageSkills;
+export default AccountPage;

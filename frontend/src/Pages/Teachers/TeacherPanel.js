@@ -14,7 +14,7 @@ const TeacherPanel = props => {
         </Grid>
       </Grid>
 
-      <Navbar />
+      <Navbar {...props} />
     </>
   )
 };

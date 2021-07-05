@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Button, FormControl, FormControlLabel, FormGroup, FormLabel, InputLabel, MenuItem, Radio, RadioGroup, TextField, Select, FormHelperText} from "@material-ui/core"
+import {Button, FormControl, FormControlLabel, FormGroup, InputLabel, MenuItem, Radio, RadioGroup, TextField, Select, FormHelperText} from "@material-ui/core"
 
 
 
@@ -72,6 +72,7 @@ const AddFormAdminVersion = props => {
             return <MenuItem key={teacher.id} value={teacher.username}>{teacher.name} {teacher.firstname}</MenuItem>
           })}
         </Select>
+        {props.freeList.length > 0 && <FormHelperText>Séléctionner un compte</FormHelperText>}
         {props.freeList.length === 0 && <FormHelperText>{props.helperText}</FormHelperText>}
       </FormControl>
     </div>

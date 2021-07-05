@@ -69,7 +69,7 @@ const ManageClassrooms = props => {
                     <Grid item xs={12} align="center">
                       {classroomsList && classroomsList.map(classroom => {
                         return (
-                          <ListItemDiv key={classroom.id}>
+                          <ListItemDiv key={classroom.id} onClick={() => props.history.push(`/admin/classrooms/${classroom.id}`)}>
                             <p>Classe de {classroom.teacher.name} {classroom.teacher.firstname} - {classroom.students_count} élèves</p>
                             <ChevronRight />
                           </ListItemDiv>
@@ -100,7 +100,7 @@ const ManageClassrooms = props => {
                   setAddLoading={setAddLoading} 
                   setFreeList={setFreeTeachersList} 
                   setList={setClassroomsList}
-                  helperText="Aucun(e) maître(sse) disponible."
+                  helperText="Aucun·e maître·sse disponible."
                   buttonText="Ajouter une classe"
                  />
               </WrapperDiv>

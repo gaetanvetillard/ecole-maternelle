@@ -23,7 +23,8 @@ export const ListItemDiv = styled.div`
 
 
 export const BlocPage = styled.div`
-  margin-bottom: 100px;
+  padding-top: 10px;
+  padding-bottom: 100px;
   display: flex;
   justify-content: center;
   flex-direction: column;

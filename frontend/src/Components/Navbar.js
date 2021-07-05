@@ -31,6 +31,18 @@ const Navbar = props => {
 
   const handleClose = () => setAnchorEl(null)
 
+  const handleLogout = () => {
+    fetch('/api/logout')
+      .then(res => {
+        if (res.ok) {
+          props.history.push('/')
+        } else {
+          res.json()
+            .then(data => console.log(data))
+        }
+      })
+  }
+
   return (
     <NavbarBalise>
       <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
@@ -48,10 +60,10 @@ const Navbar = props => {
 
       <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
         <Button>
-          <AccountCircle fontSize='large' />
+          <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
         </Button>
         <Button>
-          <ExitToApp fontSize='large' />
+          <ExitToApp fontSize='large' onClick={handleLogout}/>
         </Button>
       </ButtonGroup>
     </NavbarBalise>

@@ -9,16 +9,19 @@ from .generate_user_functions import generate_user, generate_username
 ERRORS = {
   "INVALID_ARGS": {"Error": "Invalid Arguments"},
   "INVALID_PASSWORD": {"Error": "Invalid Password"},
-  "INVALID_USERNAME": {"Error": "User Not Found"},
+  "INVALID_USERNAME": {"Error": "Invalid Username"},
   "TRY_AGAIN": {"Error": "Try Again."},
   'TEACHER_NOT_FOUND': {"Error": "Teacher Not Found"},
-  'ALREADY_IN_A_CLASSROOM': {"Error": "Teacher Is Already In A Classroom"}
+  'ALREADY_IN_A_CLASSROOM': {"Error": "Teacher Is Already In A Classroom"},
+  "USER_NOT_IN_A_SCHOOL": {"Error": "User Isn't In A School"},
+  "USER_NOT_FOUND": {'Error': "User Not Found"}
 }
 
 SUCCESS = {
   "LOGIN": {"Success": "Successfully connected"},
   "LOGOUT": {"Sucess": "Successfully logged out"},
-  "EDIT": {"Success": "Successfully edited"}
+  "EDIT": {"Success": "Successfully edited"},
+  "DELETE": {"Success": "Successfully deleted"}
 }
 
 
@@ -79,7 +82,7 @@ def get_school_infos():
       "zipcode": school.zipcode,
       "city": school.city,
       "classrooms_count": len(school.classrooms),
-      "students_count": len([student for student in school.users if student.role == ROLES['student']])
+      "users_count": len(school.users)
     }
     return jsonify(res), 200
   return jsonify(ERRORS['TRY_AGAIN']), 400
@@ -144,7 +147,7 @@ def get_classrooms_list():
     return jsonify(ERRORS['INVALID_ARGS'])
 
 
-@app.route('/api/admin/get_classroom_info/<string:classroom_id>')
+@app.route('/api/admin/get_classroom_info/<int:classroom_id>')
 @admin
 def get_classroom_info(classroom_id):
   res = {}
@@ -201,7 +204,6 @@ def get_classroom_info(classroom_id):
 
   res.update(classroom_infos)
   return jsonify(res), 200
-
 
 
 @app.route('/api/admin/add_classroom', methods=['POST'])
@@ -306,6 +308,26 @@ def transfer_classroom():
     return jsonify(ERRORS['INVALID_ARGS']), 400
 
 
+@app.route('/api/admin/delete_classroom', methods=["POST"])
+@admin
+def delete_classroom():
+  data = request.get_json()
+  if len(data) != 1:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    classroom = Classroom.query.filter_by(id=data["classroom_id"], school=current_user.school).first()
+  except:
+    return jsonify(ERRORS['INVALID_ARGS']), 400
+  
+  if not classroom:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  db.session.delete(classroom)
+  db.session.commit()
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
 @app.route('/api/admin/add_student', methods=['POST'])
 @admin
 def admin_add_student():
@@ -341,3 +363,147 @@ def admin_add_student():
     }), 200
   except:
     return jsonify(ERRORS['INVALID_ARGS']), 400
+
+  
+@app.route('/api/admin/get_users_list')
+@admin
+def get_users_list():
+  users = current_user.school.users
+  if users:
+    try:
+      res = {
+        "students": [{
+          "id": student.id,
+          "username": student.username,
+          "name": student.name,
+          "firstname": student.firstname,
+          } for student in users if student.role == ROLES['student']],
+        "teachers": [{
+          "id": teacher.id,
+          "username": teacher.username,
+          "name": teacher.name,
+          "firstname": teacher.firstname,
+        } for teacher in users if teacher.role == ROLES['teacher']],
+        "admin": {
+          "id": current_user.id,
+          "name": current_user.name,
+          "firstname": current_user.firstname,
+          "username": current_user.username
+        }
+      }
+      return jsonify(res), 200
+
+    except:
+      return jsonify(ERRORS['TRY_AGAIN']), 400
+  
+  else:
+    return jsonify(ERRORS['USER_NOT_IN_A_SCHOOL']), 400
+
+
+@app.route('/api/admin/get_user_info/<int:user_id>')
+@admin
+def get_user_infos(user_id):
+  user = User.query.filter_by(id=user_id).first()
+  
+  if user.school != current_user.school:
+    return jsonify(ERRORS['INVALID_ARGS']), 400
+  
+  res = {
+    "id": user.id,
+    "name": user.name,
+    "firstname": user.firstname,
+    "username": user.username,
+    "email": user.email,
+    "role": user.role,
+  }
+  
+  if user.classroom and user.role == ROLES['student']:
+    teacher = User.query.filter_by(role=ROLES['teacher'], classroom=user.classroom).first()
+    if not teacher:
+      return jsonify(ERRORS['TRY_AGAIN']), 400
+    res["classroom"] = {
+      "id": user.classroom.id,
+      "teacher": {
+        "id": teacher.id,
+        "name": teacher.name,
+        "username": teacher.username,
+        "firstname": teacher.firstname
+      }
+    }
+  
+  if user.role == ROLES['student']:
+    res['other_classrooms'] = [
+      {
+        "id": classroom.id,
+        "teacher": [
+          {
+            "id": teacher.id,
+            "name": teacher.name,
+            "firstname": teacher.firstname,
+            "username": teacher.username
+          } for teacher in classroom.users if teacher.role == ROLES["teacher"]
+        ] 
+      } for classroom in current_user.school.classrooms if classroom != user.classroom
+    ]
+  
+  elif user.classroom and user.role == ROLES['teacher']:
+    res['classroom'] = {
+      "id": user.classroom.id,
+    }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/edit_user_info', methods=['POST'])
+@admin
+def edit_user_info():
+  data = request.get_json()
+  if len(data) != 3:
+    return jsonify(ERRORS['INVALID_ARGS']), 400
+  
+  try:
+    to_edit = data['to_edit']
+    new_value = data['new_value']
+    user_id = data['user_id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  user = User.query.filter_by(school=current_user.school, id=user_id).first()
+  if not user:
+    return jsonify(ERRORS["USER_NOT_FOUND"]), 404
+  
+  if to_edit == "name":
+    user.name = new_value.upper()
+  elif to_edit == "firstname":
+    user.firstname = new_value.capitalize()
+  elif to_edit == "email":
+    user.email = new_value.lowercase()
+  else:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  db.session.commit()
+  return jsonify(SUCCESS["EDIT"]), 200
+
+
+@app.route('/api/admin/delete_user', methods=['POST'])
+@admin
+def admin_delete_user():
+  data = request.get_json()
+  if len(data) != 1:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    user_id = data['user_id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  user = User.query.filter_by(id=user_id, school=current_user.school).first()
+  if not user:
+    return jsonify(ERRORS["USER_NOT_FOUND"]), 404
+  
+  if user.role == 10:
+    db.session.delete(user.classroom)
+  
+  db.session.delete(user)
+  db.session.commit()
+  return jsonify(SUCCESS["DELETE"]), 200
