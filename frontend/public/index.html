@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <title>École maternelle</title>
+    <style>
+      .loader-wrapper {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          background-color: #ffb535;
+          display:flex;
+          justify-content: center;
+          align-items: center;
+      }
+
+      .loader {
+          display: inline-block;
+          width: 30px;
+          height: 30px;
+          position: relative;
+          border: 4px solid #Fff;
+          animation: loader 2s infinite ease;
+      }
+
+      @keyframes loader {
+          0% { transform: rotate(0deg);}
+          25% { transform: rotate(180deg);}
+          50% { transform: rotate(180deg);}
+          75% { transform: rotate(360deg);}
+          100% { transform: rotate(360deg);}
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <div class="loader-wrapper main-loader">
+      <span class="loader"><span class="loader-inner"></span></span>
+    </div>
+    <script>
+      const fadeOut = () => {
+      var div = document.querySelector('.main-loader')
+      if (div) {
+        var fadeOutEffect = setInterval(() => {
+          if (!div.style.opacity) {
+            div.style.opacity = 1;
+          };
+
+          if (div.style.opacity > 0) {
+            div.style.opacity -= 0.05;
+          } else {
+            clearInterval(fadeOutEffect);
+            div.remove()
+          }
+        }, 25)
+      }};
+      window.addEventListener('load', () => {
+        setInterval(fadeOut(), 2000)
+      })
+    </script>
+  </body>
+</html>
