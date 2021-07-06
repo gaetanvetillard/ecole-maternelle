@@ -10,7 +10,8 @@ import AdminPanel from "./Pages/Admin/AdminPanel";
 import ManageClassrooms from './Pages/Admin/ManageClassrooms';
 import ManageClassroom from "./Pages/Admin/ManageClassroom";
 import ManageUsers from './Pages/Admin/ManageUsers';
-import ManageUser from './Pages/Admin/ManageUser'
+import ManageUser from './Pages/Admin/ManageUser';
+import ManageSkills from './Pages/Admin/ManageSkills';
 
 
 
@@ -28,7 +29,7 @@ const App = () => {
         <Route exact path="/admin/classrooms/:classroom_id" component={ManageClassroom} />
         <Route exact path="/admin/users" component={ManageUsers} />
         <Route exact path="/admin/users/:user_id" component={ManageUser} />
-
+        <Route exact path="/admin/skills" component={ManageSkills} />
         {/* Teachers */}
 
 

@@ -86,7 +86,7 @@ class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     label = db.Column(db.String(250), nullable=False)
     image_url = db.Column(db.String(250), nullable=True)
-    subitem = db.relationship("Subitem", back_populates="item")
+    subitems = db.relationship("Subitem", back_populates="item")
     schools = db.relationship('ItemConnection', back_populates="item")
     subskill_id = db.Column(db.Integer, db.ForeignKey("subskill.id"))
     subskill = db.relationship("Subskill", back_populates="items")
@@ -102,7 +102,7 @@ class Subitem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
-    item = db.relationship("Item", back_populates="subitem")
+    item = db.relationship("Item", back_populates="subitems")
     content = db.Column(db.String(25))
 
 

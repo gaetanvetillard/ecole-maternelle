@@ -121,6 +121,84 @@ const ManageUser = props => {
     }
   }
 
+  const handleTransferClassroom = (e) => {
+    if (newClassroom) {
+      e.preventDefault();
+
+      let confirmation = null;
+      if (userInfos.classroom) {
+        confirmation = window.confirm(`Vous êtes sur le point de déplacer ${userInfos.firstname} ${userInfos.name} de la classe de ${userInfos.classroom.teacher.firstname} ${userInfos.classroom.teacher.name} vers la classe de ${newClassroom.teacher.firstname} ${newClassroom.teacher.name}. Êtes-vous sûr de vouloir continuer ?`)
+      } else {
+        confirmation = window.confirm(`Vous êtes sur le point de déplacer ${userInfos.firstname} ${userInfos.name} vers la classe de ${newClassroom.teacher.firstname} ${newClassroom.teacher.name}. Êtes-vous sûr de vouloir continuer ?`)
+      }
+      if (confirmation) {
+        let requestParams = {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            classroom_id: newClassroom.id,
+            user_id: userInfos.id
+          })
+        };
+
+        setNewClassroom("");
+
+        fetch('/api/admin/transfer_student', requestParams)
+          .then(res => {
+            if (res.ok) {
+              res.json()
+                .then(data => {
+                  // Set new classroom
+                  let new_other_classrooms = userInfos.other_classrooms.filter( classroom => {
+                    return classroom.id !== data.id
+                  })
+                  setUserInfos(prev => {return {...prev, classroom: data, other_classrooms: new_other_classrooms}})
+                })
+            } else {
+              res.json()
+                .then(data => alert(data['Error']))
+            }
+          })
+      }
+    }
+  }
+
+  const handleRemoveClassroom = () => {
+    if (userInfos.classroom) {
+      let confirmation = window.confirm(`Êtes-vous sûr de vouloir retirer ${userInfos.firstname} ${userInfos.name} de sa classe ?`)
+      if (confirmation) {
+        let old_classroom = userInfos.classroom
+        setUserInfos(prev => {return {...prev, classroom: null}})
+
+        const requestParams = {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            user_id: userInfos.id
+          })
+        };
+
+        fetch('/api/admin/remove_student', requestParams)
+          .then(res => {
+            if (res.ok) {          
+              setUserInfos(prev => {return {
+                ...prev, 
+                classroom: null, 
+                other_classrooms: [...userInfos.other_classrooms, old_classroom]
+              }});
+            } else {
+              res.json()
+                .then(data => {
+                  alert(data['Error']);
+                  setUserInfos(prev => {return {...prev, classroom: old_classroom}})
+                })
+            }
+          })
+
+      }
+    }
+  }
+
   if (globalPageHasLoading) { 
     return (
       <BlocPage>
@@ -235,21 +313,40 @@ const ManageUser = props => {
                               {userInfos.other_classrooms && userInfos.other_classrooms.map(classroom => {
                                 return <MenuItem
                                           key={classroom.id}
-                                          value={classroom.id}
-                                        >{classroom.teacher[0].name} {classroom.teacher[0].firstname}</MenuItem>
+                                          value={classroom}
+                                        >{classroom.teacher.name} {classroom.teacher.firstname}</MenuItem>
                               }) }
                             </Select>
                             {userInfos.other_classrooms.length === 0 && <FormHelperText>Aucune classe disponible</FormHelperText>}
                           </FormControl>
                         </div>
-                        <Button type="submit" variant="contained" style={{width: "100%", maxWidth: 300, marginTop: 10}} onClick={e => console.log(e)}>Transférer</Button>
+                        <Button 
+                          type="submit" 
+                          variant="contained" 
+                          style={{width: "100%", maxWidth: 300, marginTop: 10}} 
+                          onClick={e => handleTransferClassroom(e)}
+                        >
+                          Transférer
+                        </Button>
                       </form>
                     </WrapperDiv>
                   </Grid> 
                   <Grid item xs={12} md={6} align="center">
                     <WrapperDiv style={{margin: 5}}>
                       <H3>Retirer de la classe</H3>
-                      
+                      {userInfos.classroom ?
+                        <Button
+                        variant="contained"
+                        style={{width: "100%", maxWidth: 300}}
+                        onClick={handleRemoveClassroom}
+                        >Retirer de la classe</Button>
+                        :
+                        <Button
+                        variant="contained"
+                        style={{width: "100%", maxWidth: 300}}
+                        disabled
+                        >Retirer de la classe</Button>
+                      }
                     </WrapperDiv>
                   </Grid>
                 </Grid>

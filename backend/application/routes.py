@@ -70,6 +70,45 @@ def is_login():
 
 
 
+# Super Admin routes
+@app.route('/api/super_admin/get_skills')
+# @super_admin
+def super_admin_get_skills():
+  all_skills = Skill.query.filter_by(scope=100).all()
+  res = [
+    {
+      "id": skill.id,
+      "name": skill.name,
+      "subskill": [
+        {
+          "id": subskill.id,
+          "name": subskill.name,
+          "items": [
+            {
+              "id": item.id,
+              "label": item.label,
+              "type": "simple" if item.image_url else "complex",
+              "image_url": item.image_url if item.image_url else None,
+              "subitems": [
+                {
+                  "id": subitem.id,
+                  "content": subitem.content
+                } for subitem in item.subitems
+              ] if item.subitems else None
+            } for item in subskill.items if item.scope == 100
+          ]
+        } for subskill in skill.subskills if subskill.scope == 100
+      ]
+    } for skill in all_skills
+  ]
+
+  return jsonify(res), 200
+
+
+
+
+
+
 # School admin routes
 @app.route('/api/admin/get_school_infos')
 @admin
@@ -442,7 +481,7 @@ def get_user_infos(user_id):
             "firstname": teacher.firstname,
             "username": teacher.username
           } for teacher in classroom.users if teacher.role == ROLES["teacher"]
-        ] 
+        ][0] 
       } for classroom in current_user.school.classrooms if classroom != user.classroom
     ]
   
@@ -485,6 +524,54 @@ def edit_user_info():
   return jsonify(SUCCESS["EDIT"]), 200
 
 
+@app.route('/api/admin/transfer_student', methods=['POST'])
+@admin
+def transfer_student():
+  data = request.get_json()
+  if len(data) != 2:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    user = User.query.filter_by(id=data['user_id'], school=current_user.school).first()
+    new_classroom = Classroom.query.filter_by(id=data['classroom_id'], school=current_user.school).first()
+    
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+
+  user.classroom = new_classroom
+  db.session.commit()
+  # return new classroom values
+  new_teacher = User.query.filter_by(classroom=new_classroom, role=ROLES['teacher']).first()
+  res = {
+    "id": new_classroom.id,
+    "teacher": {
+      "id": new_teacher.id,
+      "name": new_teacher.name,
+      "firstname": new_teacher.firstname,
+      "username": new_teacher.username
+    }
+  }
+  
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/remove_student', methods=["POST"])
+@admin
+def remove_student():
+  data = request.get_json()
+  if len(data) != 1:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    user = User.query.filter_by(school=current_user.school, id=data['user_id']).first()
+  except:
+    return jsonify(ERRORS["USER_NOT_FOUND"])
+  
+  user.classroom = None
+  db.session.commit()
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
 @app.route('/api/admin/delete_user', methods=['POST'])
 @admin
 def admin_delete_user():
@@ -507,3 +594,9 @@ def admin_delete_user():
   db.session.delete(user)
   db.session.commit()
   return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/admin/get_skills')
+@admin
+def admin_get_skills():
+  pass

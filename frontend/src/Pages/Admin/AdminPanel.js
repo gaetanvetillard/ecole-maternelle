@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import Navbar from "../../Components/Navbar";
 import SearchBar from "../../Components/SearchBar";
-import { WrapperDiv, BlocPage } from "../../Styles/Divs";
+import { WrapperDiv, BlocPage, ListItemDiv } from "../../Styles/Divs";
 import {LoadingPage} from '../../Components/Loading';
 import { YellowDividerH2 } from "../../Styles/Dividers";
 import { H1, H2, H3 } from "../../Styles/Titles";
@@ -188,9 +188,10 @@ const AdminPanel = props => {
               <YellowDividerH2 />
               <Grid container>
                 <Grid item xs={12} align="center">
-                  <WrapperDiv>
-                    <H3>Ajouter des items</H3>
-                  </WrapperDiv>
+                  <ListItemDiv onClick={() => props.history.push('/admin/skills')}>
+                    <H3>Liste des compétences</H3>
+                    <ChevronRight />
+                  </ListItemDiv>
                 </Grid>
               </Grid>
             </WrapperDiv>  

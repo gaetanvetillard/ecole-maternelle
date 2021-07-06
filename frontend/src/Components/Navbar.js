@@ -43,31 +43,36 @@ const Navbar = props => {
       })
   }
 
-  return (
-    <NavbarBalise>
-      <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
-        <MenuIcon fontSize='large' />
-      </Button>
-      <Menu
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem>Gérer la liste de compétences</MenuItem>
-      </Menu>
-      
-
-      <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
-        <Button>
-          <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
+  if (props.userInfos.role === 100) {
+    return (
+      <NavbarBalise>
+        <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
+          <MenuIcon fontSize='large' />
         </Button>
-        <Button>
-          <ExitToApp fontSize='large' onClick={handleLogout}/>
-        </Button>
-      </ButtonGroup>
-    </NavbarBalise>
-  )
+        <Menu
+          anchorEl={anchorEl}
+          keepMounted
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={() => props.history.push('/admin')}>Gérer l'école</MenuItem>
+          <MenuItem onClick={() => props.history.push('/admin/classrooms')}>Gérer les classes</MenuItem>
+          <MenuItem onClick={() => props.history.push('/admin/users')}>Gérer les utilisateurs</MenuItem>
+        </Menu>
+        
+  
+        <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
+          <Button>
+            <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
+          </Button>
+          <Button>
+            <ExitToApp fontSize='large' onClick={handleLogout}/>
+          </Button>
+        </ButtonGroup>
+      </NavbarBalise>
+    )
+  }
+  
 };
 
 export default Navbar;
