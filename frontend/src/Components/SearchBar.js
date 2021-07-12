@@ -75,4 +75,16 @@ const Searchbar = props => {
 };
 
 
+export const SearchbarXS = props => {
+  return (
+    <SearchBox>
+      <SearchLogo onClick={props.searchFunction} style={{cursor: "pointer"}}> 
+        <Search />
+      </SearchLogo>
+      <InputBox onChange={props.onChangeFunction} value={props.value} placeholder={props.placeholder} />
+    </SearchBox>
+  )
+}
+
+
 export default Searchbar;

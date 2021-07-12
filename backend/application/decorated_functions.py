@@ -13,7 +13,7 @@ def super_admin(f):
   ''' Decorated function to allowed access to super admin only '''
   @wraps(f)
   def decorated_func(*args, **kwargs):
-    if current_user.is_authenticated and current_user.role == ROLES["admin"]:
+    if current_user.is_authenticated and current_user.role == ROLES["super_admin"]:
       return f(*args, **kwargs)
     return jsonify({"Access Denied": "You don't have access to this page."}), 403
   return decorated_func

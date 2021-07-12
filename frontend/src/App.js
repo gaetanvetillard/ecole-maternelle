@@ -6,6 +6,12 @@ import LoginPage from './Pages/LoginPage';
 import ErrorPage from "./Pages/Error404Page";
 import AccountPage from './Pages/AccountPage';
 
+import SuperAdminPanel from './Pages/SuperAdmin/SuperAdminPanel';
+import SuperAdminSchools from "./Pages/SuperAdmin/SuperAdminSchools";
+import SuperAdminUsers from "./Pages/SuperAdmin/SuperAdminUsers";
+import SuperAdminSkills from './Pages/SuperAdmin/SuperAdminSkills';
+
+
 import AdminPanel from "./Pages/Admin/AdminPanel";
 import ManageClassrooms from './Pages/Admin/ManageClassrooms';
 import ManageClassroom from "./Pages/Admin/ManageClassroom";
@@ -23,6 +29,11 @@ const App = () => {
       <Switch>
         <Route exact path="/" component={LoginPage} />
         <Route exact path="/account" component={AccountPage} />
+        {/* Super Admin */}
+        <Route exact path="/super-admin" component={SuperAdminPanel} />
+        <Route exact path="/super-admin/schools" component={SuperAdminSchools} />
+        <Route exact path="/super-admin/users" component={SuperAdminUsers} />
+        <Route exact path="/super-admin/skills" component={SuperAdminSkills} />
         {/* Admin */}
         <Route exact path="/admin" component={AdminPanel} />
         <Route exact path="/admin/classrooms" component={ManageClassrooms} />

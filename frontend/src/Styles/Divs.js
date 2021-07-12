@@ -19,6 +19,7 @@ export const ListItemDiv = styled.div`
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  text-align: left;
 `;
 
 

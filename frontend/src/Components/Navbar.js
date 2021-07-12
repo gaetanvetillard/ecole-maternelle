@@ -71,6 +71,34 @@ const Navbar = props => {
         </ButtonGroup>
       </NavbarBalise>
     )
+  } else if (props.userInfos.role === 1000) {
+    return (
+      <NavbarBalise>
+        <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
+          <MenuIcon fontSize='large' />
+        </Button>
+        <Menu
+          anchorEl={anchorEl}
+          keepMounted
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={() => props.history.push('/super-admin')}>Gérer le site</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super-admin/schools')}>Gérer les classes</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super-admin/users')}>Gérer les utilisateurs</MenuItem>
+        </Menu>
+        
+  
+        <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
+          <Button>
+            <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
+          </Button>
+          <Button>
+            <ExitToApp fontSize='large' onClick={handleLogout}/>
+          </Button>
+        </ButtonGroup>
+      </NavbarBalise>
+    )
   }
   
 };
