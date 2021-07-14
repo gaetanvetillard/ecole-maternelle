@@ -75,9 +75,9 @@ const SuperAdminPanel = props => {
                   </WrapperDiv>
                 </Grid>
                 <Grid item xs={6} align="center" style={{padding: "0 0 0 5px"}}>
-                  <WrapperDiv style={{cursor: "pointer"}} onClick={() => props.history.push('/super-admin/users')}>
+                  <WrapperDiv>
                     <H3 style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                      Nombre d'utilisateurs <ChevronRight />
+                      Nombre d'utilisateurs
                     </H3>
                     <WrapperDiv>
                       <H1>{infos.users_count}</H1>

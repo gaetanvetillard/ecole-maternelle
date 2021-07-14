@@ -1,29 +1,15 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Radio, FormControlLabel, RadioGroup, TextField } from '@material-ui/core';
-import { AddCircleRounded, ExpandLess, ExpandMore } from '@material-ui/icons';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Radio, FormControlLabel, RadioGroup, TextField, Select, MenuItem } from '@material-ui/core';
+import { AddCircleRounded, Delete, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { YellowDividerH2 } from '../../Styles/Dividers';
 import { WrapperDiv } from '../../Styles/Divs';
 import { H2, H3 } from '../../Styles/Titles';
 import { LoadingItem } from '../Loading';
+import axios from "axios";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 
 
-
-const SkillTitle = styled.h3`
-  margin: 10px 0px 0px;
-
-  @media screen and (min-width: 768px) {
-    font-size: 24px;
-  }
-`;
-
-const SubskillTitle = styled.h4`
-  margin: 0px;
-
-  @media screen and (min-width: 768px) {
-    font-size: 20px;
-  }
-`;
 
 const ItemDiv = styled.div`
   position: relative;
@@ -46,12 +32,15 @@ const ItemDiv = styled.div`
   }
 
   & .content img {
+    min-width: 140px;
+    min-height: 140px;
     width: 140px;
     height: 140px;
   }
 
   & .title {
-    border-radius: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
     background: #ffb535;
     padding: 2px 3px 5px;
   }
@@ -70,6 +59,8 @@ const ItemDiv = styled.div`
     height: 312px;
 
     & .content img {
+      min-width: 185px;
+      min-height: 185px;
       width: 185px;
       height: 185px;
     }
@@ -82,8 +73,24 @@ export const Skill = props => {
   const [isExpand, setIsExpand] = useState(false);
   const [subskills, setSubskills] = useState(props.skill.subskills)
   const [addLoading, setAddLoading] = useState(false);
+  const [freeSubskills, setFreeSubskills] = useState(props.skill.free_subskills)
 
   const skill = props.skill;
+
+  const handleDeleteSkill = () => {
+    let confirmation = window.confirm('Êtes vous sûr de vouloir supprimer cette compétence? Cela supprimera toutes les sous-compétences et items.')
+    if (confirmation) {
+      props.setSkills(prev => [...prev].filter(skill_ => skill_.id !== skill.id))
+
+      fetch(`/api/${props.role === 1000 ? "super_admin" : "admin"}/delete_skill?id=${skill.id}`, {method: "POST"}) 
+        .then(res => {
+          if (!res.ok) {
+            res.json()
+              .then(data => alert(data['Error']))
+          }
+        })
+    }
+  }
 
   return (
     <Grid container>
@@ -93,7 +100,10 @@ export const Skill = props => {
             onClick={() => isExpand ? setIsExpand(false) : setIsExpand(true)}
             style={{cursor: "pointer"}} 
           >
-              <SkillTitle style={{margin: 0}}>{skill.name}</SkillTitle>
+              <div style={{display: "flex", justifyContent:"center", alignItems: "center"}}>
+                <H2 style={{margin: 0}}>{skill.name}</H2>
+                {props.role === 1000 && <Delete onClick={handleDeleteSkill} style={{marginLeft: 5}}/>}
+              </div>
               {isExpand ?
                 <ExpandLess style={{width: 32, height: 32}} />
                 :
@@ -101,7 +111,7 @@ export const Skill = props => {
               }
           </div>
           {isExpand && subskills.length > 0 && subskills.map(subskill => {
-              return <Subskill key={subskill.id} subskill={subskill}/>
+              return <Subskill key={subskill.id} subskill={subskill} setSubskills={setSubskills} setFreeSubskills={setFreeSubskills} role={props.role}/>
             })
           }
           {isExpand && subskills.length === 0 && !addLoading &&
@@ -111,7 +121,7 @@ export const Skill = props => {
             <LoadingItem />
           }
           {isExpand &&
-            <AddSubskill skill={skill} setAddLoading={setAddLoading} setSubskills={setSubskills}/>
+            <AddSubskill skill={skill} setAddLoading={setAddLoading} setSubskills={setSubskills} freeSubskills={freeSubskills} setFreeSubskills={setFreeSubskills}/>
           }
           </WrapperDiv>
       </Grid>
@@ -122,21 +132,39 @@ export const Skill = props => {
 
 export const Subskill = props => {
   const [isExpand, setIsExpand] = useState(false);
+  const [items, setItems] = useState(props.subskill.items);
+  const [addLoading, setAddLoading] = useState(false);
+  const [freeItems, setFreeItems] = useState(props.subskill.free_items);
 
   const subskill = props.subskill;
-  const items = props.subskill.items;
+
+  const handleDeleteSubskill = () => {
+    let confirmation = window.confirm("Êtes vous sûr de vouloir supprimer cette sous-compétence ? Cela supprimera également les items associés.")
+    if (confirmation) {
+      props.setSubskills(prev => [...prev].filter(subskill_ => subskill_.id !== subskill.id))
+      props.setFreeSubskills(prev => [...prev, subskill.name])
+
+      fetch(`/api/${props.role === 1000 ? "super_admin" : "admin"}/delete_subskill?id=${subskill.id}`, {method: "POST"})
+        .then(res => {
+          if (!res.ok) {
+            res.json()
+              .then(data => alert(data['Error']))
+          }
+        })
+    }
+  }
 
   return (
-    <WrapperDiv style={{margin: 0}}>
+    <WrapperDiv style={{margin: 0, marginTop: 10}}>
       <div 
         onClick={() => isExpand ? setIsExpand(false) : setIsExpand(true)}
         style={{cursor: "pointer"}}
       >
-        <SubskillTitle 
-          style={{fontFamily: 'inherit', fontWeight: "bold"}}
-        >
-          {subskill.name}
-        </SubskillTitle>
+        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+          <H3>{subskill.name}</H3>
+          <Delete style={{marginLeft: 5, width: 20, height: 20}} onClick={handleDeleteSubskill}/>
+        </div>
+
         {isExpand ?
           <ExpandLess style={{width: 32, height: 32}} />
           :
@@ -145,11 +173,16 @@ export const Subskill = props => {
       </div>
       {isExpand && items.length > 0 &&
         <div style={{display: "flex", flexWrap: "nowrap", overflow: "scroll hidden", width: "100%"}}>
-          {items.map((item, index) => <Item item={item} subskill={subskill} key={item.id} index={index} />)}
+          {items.map((item, index) => <Item item={item} subskill={subskill} key={item.id} index={index} setFreeItems={setFreeItems} setItems={setItems} role={props.role}/>)}
+          {addLoading && isExpand &&
+            <div style={{display: "flex", alignItems:"center"}}>
+              <LoadingItem />
+            </div>
+          }
         </div>
       }
       {isExpand &&
-        <AddItem />
+        <AddItem subskill_id={subskill.id} setList={setItems} freeItems={freeItems} setFreeItems={setFreeItems} setAddLoading={setAddLoading} />
       }
     </WrapperDiv>
   )
@@ -157,25 +190,57 @@ export const Subskill = props => {
 
 
 export const Item = props => {
-
   const subskill = props.subskill
   const item = props.item
 
+  const handleDeleteItem = () => {
+    let confirmation = window.confirm("Êtes vous sûr de vouloir supprimer cet item? Cette action est irréversible.")
+    if (confirmation) {
+
+      props.setItems(prev => [...prev].filter(item_ => item_.id !== item.id))
+      props.setFreeItems(prev => [...prev, item.label])
+
+      let requestParams = {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          id: item.id
+        })
+      };
+
+      fetch(`/api/${props.role === 1000 ? "super_admin" : "admin"}/delete_item`, requestParams)
+        .then(res => {
+          if (!res.ok) {
+            res.json()
+              .then(data => alert(data['Error']))
+          }
+        })
+
+    }
+  }
+
   return (
-    <ItemDiv>
-      <h4 className={"title"}>{subskill.name} ({props.index+1})</h4>
-      <div className="content">
-        {item.type === "complex" &&
-          item.subitems.map(subitem => {
-            return <p key={subitem.id} style={{padding: 5}}>{subitem.content}</p>
-          })
-        }
-        {item.type === "simple" &&
-          <img src="https://www.sesamath.net/images/Sesamath_bandeau.png" alt="illustration" />
-        }
-      </div>
-      <p className="label">{item.label}</p>
-    </ItemDiv>
+    <div style={{display: "flex", flexDirection: "column"}}>
+      <ItemDiv>
+        <h4 className={"title"}>{subskill.name} ({props.index+1})</h4>
+        <div className="content">
+          {item.type === "complex" &&
+            item.subitems.map((subitem, index) => {
+              return <p key={index} style={{padding: 5}}>{subitem.content}</p>
+            })
+          }
+          {item.type === "simple" &&
+            <img src={`/image/${item.id}`} alt="illustration" />
+          }
+        </div>
+        <p className="label">{item.label}</p>
+      </ItemDiv>
+      <Button
+        style={{marginRight: 10, marginBottom: 10, borderRadius: 10, borderColor: "#ffb535"}}
+        variant="outlined"
+        onClick={handleDeleteItem}
+      >Supprimer</Button>
+    </div>
   )
 }
 
@@ -246,11 +311,18 @@ export const AddSkill = props => {
 const AddSubskill = props => {
   const [name, setName] = useState("");
 
+  
+
   const handleAddSubskill = e => {
     if (name) {
       e.preventDefault();
       setName("");
       props.setAddLoading(true)
+
+      if (props.freeSubskills.includes(name)) {
+        props.setFreeSubskills(prev => [...prev].filter(e => e !== name))
+      }
+
 
       let requestParams = {
         method: "POST",
@@ -261,7 +333,7 @@ const AddSubskill = props => {
         })
       };
 
-      fetch('/api/super_admin/add_subskill', requestParams)
+      fetch(`/api/${props.role === 1000 ? "super_admin" : "admin"}/add_subskill`, requestParams)
         .then(res => {
           if (res.ok) {
             res.json()
@@ -287,12 +359,31 @@ const AddSubskill = props => {
           <H3>Ajouter une sous-compétence</H3>
           <YellowDividerH2 style={{margin: 0}} />
           <form method="POST" style={{display: "flex", justifyContent: "center", alignItems: "flex-end"}}>
-            <TextField 
+            {props.role === 1000 ?
+              <TextField 
               label='Nom'
               onChange={e => setName(e.target.value)}
               value={name}
               required
-            />
+              />
+              :
+              <Autocomplete
+                disableClearable
+                options={props.freeSubskills.map((option) => option)}
+                style={{maxWidth: "300px", width: "100%"}}
+                value={name}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Nom"
+                    required
+                    InputProps={{ ...params.InputProps, type: "search" }}
+                    onSelect={e => setName(e.target.value)}
+                    value={name}
+                  />
+                )}
+              />
+            }
             <Button
               type="submit"
               variant="contained"
@@ -306,11 +397,13 @@ const AddSubskill = props => {
     </Grid>
   )
 
+
 }
 
 const AddItem = props => {
   const [open, setOpen] = useState(false);
   const [itemType, setItemType] = useState("simple");
+  const [itemName, setItemName] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [subitemsList, setSubitemsList] = useState([]);
   const [subitemName, setSubitemName] = useState("");
@@ -320,9 +413,89 @@ const AddItem = props => {
 
   const handleAddItem = () => {
     if (itemType === "simple") {
-      console.log('slt')
+      if (selectedFile.length > 0 && itemName) {
+        props.setAddLoading(true);
+        handleClose();
+
+        const formData = new FormData();
+        formData.append('image', selectedFile[0], selectedFile[0].name);
+       
+        axios.post(`/api/${props.role === 1000 ? "super_admin" : "admin"}/add_simple_item?subskill_id=${props.subskill_id}&name=${itemName}`, formData)
+          .then(res => {
+            if (res.status === 200) {
+              props.setList(prev => [...prev, res.data]);
+              props.setAddLoading(false);
+            } else {
+              alert(res.data['Error'])
+            }
+          })
+      }
     } else if (itemType === "complex") {
-      console.log("slt")
+      if (itemName && subitemsList.length > 0) {
+        props.setAddLoading(true);
+        handleClose();
+
+        let requestParams = {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            subskill_id: props.subskill_id,
+            name: itemName,
+            subitems: subitemsList
+          })
+        };
+
+        fetch(`/api/${props.role === 1000 ? "super_admin" : "admin"}/add_complex_item`, requestParams)
+          .then(res => {
+            if (res.ok) {
+              res.json()
+                .then(data => {
+                  props.setList(prev => [...prev, data]);
+                  props.setAddLoading(false);
+                })
+            } else {
+              res.json()  
+                .then(data => {
+                  props.setAddLoading(false);
+                  alert(data['Error']);
+                })
+            }
+          })
+
+      }
+    } else if (itemType === "existing") {
+      if (itemName) {
+        props.setAddLoading(true);
+        setItemName('')
+        handleClose();
+
+        let requestParams = {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            subskill_id: props.subskill_id,
+            name: itemName,
+          })
+        };
+
+        fetch(`/api/admin/add_existing_item`, requestParams)
+          .then(res => {
+            if (res.ok) {
+              res.json()
+                .then(data => {
+                  props.setFreeItems(prev => [...prev].filter(e => e !== itemName));
+                  props.setList(prev => [...prev, data])
+                  props.setAddLoading(false);
+                })
+            } else {
+              res.json()  
+                .then(data => {
+                  props.setAddLoading(false);
+                  alert(data['Error']);
+                })
+            }
+          })
+      }
     }
   }
 
@@ -338,13 +511,27 @@ const AddItem = props => {
           <DialogContentText>
             Pour ajouter un item, remplissez ce formulaire
           </DialogContentText>
-          <TextField
-            autoFocus
-            autoComplete="none"
-            label="Nom"
-            fullWidth
-            required
-          />
+          {itemType !== "existing" ?
+            <TextField
+              autoFocus
+              autoComplete="none"
+              label="Nom"
+              fullWidth
+              required
+              value={itemName}
+              onSelect={e => setItemName(e.target.value)}
+            />
+            :
+            <Select
+              value={itemName ? itemName : ""}
+              onChange={e => setItemName(e.target.value)}
+              style={{width: "100%"}}
+            >
+              {props.freeItems && props.freeItems.map((item, index) => {
+                return <MenuItem key={index} value={item}>{item}</MenuItem>
+              })}
+            </Select>
+          }
           <RadioGroup 
             value={itemType} 
             onChange={e => setItemType(e.target.value)}
@@ -359,6 +546,12 @@ const AddItem = props => {
               value="complex" 
               control={<Radio style={{color: "#ffb535"}} />} 
               label="Complexe"
+            />
+            <FormControlLabel 
+              value="existing" 
+              control={<Radio style={{color: "#ffb535"}} />} 
+              label="Existant"
+              disabled={props.freeItems.length > 0 ? false : true}
             />
             
           </RadioGroup>
@@ -396,20 +589,22 @@ const AddItem = props => {
               })}
             </ol>
             {subitemsList.length < 30 &&
-              <div style={{display: "flex", justifyContent: "center"}}>
+              <form style={{display: "flex", justifyContent: "center"}}>
                 <TextField 
                   label="Ajouter un sous-item"
                   autoComplete="none"
                   value={subitemName}
                   onChange={e => setSubitemName(e.target.value)}
+                  required
                 />
                 <Button
-                  onClick={() => {
-                    if (subitemName) {setSubitemsList(prev => [...prev, subitemName]); setSubitemName("")}
+                  onClick={(e) => {
+                    if (subitemName) {e.preventDefault(); setSubitemsList(prev => [...prev, subitemName]); setSubitemName("")}
                   }}
+                  type="submit"
                   style={{alignItems: "flex-end"}}
                 ><AddCircleRounded style={{pading: 0}}/></Button>
-              </div>
+              </form>
             }
           </>
         }

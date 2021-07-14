@@ -62,7 +62,7 @@ const SuperAdminSkills = props => {
         <Grid container>
           <Grid item xs={12} align="center">
             {skills.length > 0 && skills.map(skill => {
-              return <Skill skill={skill} key={skill.id}/>
+              return <Skill skill={skill} key={skill.id} setSkills={setSkills} role={1000}/>
             })}
             {skills.length === 0 &&
               <h3>Aucune compétence</h3>
@@ -70,7 +70,7 @@ const SuperAdminSkills = props => {
             {addLoading &&
               <LoadingItem />
             }
-            <AddSkill setAddLoading={setAddLoading} setSkills={setSkills}/>
+            <AddSkill setAddLoading={setAddLoading} setSkills={setSkills} role={1000}/>
           </Grid>
         </Grid>
 

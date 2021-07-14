@@ -1,6 +1,7 @@
 from flask import *
 from flask import current_app as app
 from flask_login import current_user, logout_user, login_user
+from werkzeug.utils import secure_filename
 
 from .models import *
 from .decorated_functions import *
@@ -163,7 +164,6 @@ def super_admin_get_skills():
                 {
                   "id": subitem.id,
                   "content": subitem.content,
-                  "type": subitem.type if subitem.type else None
                 } for subitem in item.subitems
               ] if item.subitems else None
             } for item in subskill.items if item.scope == 100
@@ -252,7 +252,18 @@ def super_admin_delete_school():
     for classroom in school_to_delete.classrooms:
       db.session.delete(classroom)
 
+    for skill_c in SkillConnection.query.filter_by(school=school_to_delete).all():
+      db.session.delete(skill_c)
+    
+    for subskill_c in SubskillConnection.query.filter_by(school=school_to_delete).all():
+      db.session.delete(subskill_c)
+    
+    for item_c in ItemConnection.query.filter_by(school=school_to_delete).all():
+      db.session.delete(item_c)
+
     db.session.delete(school_to_delete)
+    db.session.commit()
+
     return jsonify(SUCCESS["DELETE"]), 200
 
 
@@ -303,6 +314,148 @@ def super_admin_add_subskill():
   }
 
   return jsonify(res), 200
+
+
+@app.route('/api/super_admin/add_simple_item', methods=["POST"])
+@super_admin
+def super_admin_add_simple_item():
+  data = request.args
+  if len(data) != 2:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    image = request.files["image"]
+    subskill = Subskill.query.filter_by(id=data['subskill_id'], scope=100).first()
+    name = data['name']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  new_image = ItemImage(
+    image=image.read(),
+    mimetype=image.mimetype,
+    filename=secure_filename(image.filename)
+  )
+  db.session.add(new_image)
+
+  new_item = Item(
+    label=name,
+    subskill=subskill,
+    scope=100,
+    image_url=f"/image/{new_image.id}"
+  )
+  db.session.add(new_item)
+  db.session.commit()
+
+  res = {
+    "id": new_item.id,
+    "label": new_item.label,
+    "type": "simple",
+    "image_url": new_item.image_url,
+    "subitems": []
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/super_admin/add_complex_item', methods=['POST'])
+@super_admin
+def super_admin_add_complex_item():
+  data = request.get_json()
+
+  try:
+    subskill = Subskill.query.filter_by(id=data['subskill_id'], scope=100).first()
+    name = data['name']
+    subitems = data['subitems']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  new_item = Item(
+    label=name,
+    subskill=subskill,
+    scope=100,
+  )
+  db.session.add(new_item)
+
+  subitems_list = []
+
+  for subitem in subitems:
+    new_subitem = Subitem(
+      item=new_item,
+      content=subitem,
+    )
+    
+    subitems_list.append({
+      "id": new_subitem.id,
+      "content": new_subitem.content,
+    })
+
+    db.session.add(new_subitem)
+  
+  db.session.commit()
+
+  res = {
+    "id": new_item.id,
+    "label": new_item.label,
+    "type": "complex",
+    "image_url": None,
+    "subitems": subitems_list
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/super_admin/delete_item', methods=['POST'])
+@super_admin
+def super_admin_delete_item():
+  data = request.get_json()
+
+  try:
+    item = Item.query.filter_by(id=data['id']).first()
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  db.session.delete(item)
+  db.session.commit()
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/super_admin/delete_skill', methods=['POST'])
+@super_admin
+def super_admin_delete_skill():
+  try:
+    id = request.args['id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  skill = Skill.query.filter_by(scope=100, id=id).first()
+
+  for subskill in skill.subskills:
+    for item in subskill.items:
+      db.session.delete(item)
+    db.session.delete(subskill)
+  db.session.delete(skill)
+  db.session.commit()
+
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/super_admin/delete_subskill', methods=['POST'])
+@super_admin
+def super_admin_delete_subskill():
+  try:
+    id = request.args['id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  subskill = Subskill.query.filter_by(scope=100, id=id).first()
+
+  for item in subskill.items:
+    db.session.delete(item)
+  db.session.delete(subskill)
+  db.session.commit()
+
+  return jsonify(SUCCESS["DELETE"]), 200
+
 
 
 
@@ -798,4 +951,287 @@ def admin_delete_user():
 @app.route('/api/admin/get_skills')
 @admin
 def admin_get_skills():
-  pass
+  school = current_user.school
+  all_skills = [skill_connection.skill for skill_connection in school.skills]
+  all_subskills = [subskill_connection.subskill for subskill_connection in school.subskills]
+  all_items = [item_connection.item for item_connection in school.items]
+
+
+  res = [
+    {
+      "id": skill.id,
+      "name": skill.name,
+      "scope": skill.scope,
+      "subskills": [
+        {
+          "id": subskill.id,
+          "name": subskill.name,
+          "scope": subskill.scope,
+          "items": [
+            {
+              "id": item.id,
+              "label": item.label,
+              "type": "simple" if item.image_url else "complex",
+              "image_url": item.image_url if item.image_url else None,
+              "scope": item.scope,
+              "subitems": [
+                {
+                  "id": subitem.id,
+                  "content": subitem.content,
+                } for subitem in item.subitems
+              ] if item.subitems else None
+            } for item in subskill.items if item in all_items
+          ],
+          "free_items": [item.label for item in subskill.items if item not in all_items and item.scope == 100]
+        } for subskill in skill.subskills if subskill in all_subskills
+      ],
+      "free_subskills": [subskill.name for subskill in skill.subskills if subskill not in all_subskills and subskill.scope == 100]
+    } for skill in all_skills
+  ]
+
+  
+
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/delete_item', methods=['POST'])
+@admin
+def admin_delete_item():
+  data = request.get_json()
+
+  try:
+    item = Item.query.filter_by(id=data['id']).first()
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  item_connection = ItemConnection.query.filter_by(school=current_user.school, item=item).first()
+
+  if item.scope == 100:
+    db.session.delete(item_connection)
+  else:
+    db.session.delete(item)
+    db.session.delete(item_connection)
+  db.session.commit()
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/admin/delete_skill', methods=['POST'])
+@admin
+def admin_delete_skill():
+  try:
+    id = request.args['id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  skill = Skill.query.filter_by(id=id).first()
+  skill_connection = SkillConnection.query.filter_by(school=current_user.school, skill=skill).first()
+
+  if skill.scope == 100:
+    db.session.delete(skill_connection)
+  
+  else:
+    for subskill in skill.subskills:
+      for item in subskill.items:
+        db.session.delete(item)
+      db.session.delete(subskill)
+    db.session.delete(skill)
+    db.session.delete(skill_connection)
+  
+  db.session.commit()
+
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/admin/delete_subskill', methods=['POST'])
+@admin
+def admin_delete_subskill():
+  try:
+    id = request.args['id']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  subskill = Subskill.query.filter_by(id=id).first()
+  subkill_connection = SubskillConnection.query.filter_by(school=current_user.school, subskill=subskill).first()
+
+  if subskill.scope == 100:
+    db.session.delete(subkill_connection)
+  
+  else:
+    for item in subskill.items:
+      db.session.delete(item)
+    db.session.delete(subskill)
+    db.session.delete(subkill_connection)
+  
+  db.session.commit()
+
+  return jsonify(SUCCESS["DELETE"]), 200
+
+
+@app.route('/api/admin/add_subskill', methods=['POST'])
+@admin
+def admin_add_subskill():
+  data = request.get_json()
+  try:
+    skill = Skill.query.filter_by(id=data['skill_id']).first()
+    name = data["name"]
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  subskill = Subskill.query.filter_by(scope=100, name=name).first()
+  if not subskill:
+    subskill = Subskill(
+      skill=skill,
+      name=name,
+    )
+    db.session.add(subskill)
+  
+  new_subskill_connection = SubskillConnection(school=current_user.school, subskill=subskill)
+  db.session.add(new_subskill_connection)
+
+  db.session.commit()
+
+  res = {
+    "id": subskill.id,
+    "name": subskill.name,
+    "items": []
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/add_simple_item', methods=["POST"])
+@admin
+def admin_add_simple_item():
+  data = request.args
+  if len(data) != 2:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  try:
+    image = request.files["image"]
+    subskill = Subskill.query.filter_by(id=data['subskill_id'], scope=100).first()
+    name = data['name']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  new_image = ItemImage(
+    image=image.read(),
+    mimetype=image.mimetype,
+    filename=secure_filename(image.filename)
+  )
+  db.session.add(new_image)
+
+  new_item = Item(
+    label=name,
+    subskill=subskill,
+    image_url=f"/image/{new_image.id}"
+  )
+  db.session.add(new_item)
+
+  new_connection = ItemConnection(item=new_item, school=current_user.school)
+  db.session.add(new_connection)
+
+  db.session.commit()
+
+  res = {
+    "id": new_item.id,
+    "label": new_item.label,
+    "type": "simple",
+    "image_url": new_item.image_url,
+    "subitems": []
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/add_complex_item', methods=['POST'])
+@admin
+def admin_add_complex_item():
+  data = request.get_json()
+
+  try:
+    subskill = Subskill.query.filter_by(id=data['subskill_id'], scope=100).first()
+    name = data['name']
+    subitems = data['subitems']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  new_item = Item(
+    label=name,
+    subskill=subskill,
+  )
+  db.session.add(new_item)
+
+  new_connection = ItemConnection(item=new_item, school=current_user.school)
+  db.session.add(new_connection)
+
+  subitems_list = []
+
+  for subitem in subitems:
+    new_subitem = Subitem(
+      item=new_item,
+      content=subitem,
+    )
+    
+    subitems_list.append({
+      "id": new_subitem.id,
+      "content": new_subitem.content,
+    })
+
+    db.session.add(new_subitem)
+  
+  db.session.commit()
+
+  res = {
+    "id": new_item.id,
+    "label": new_item.label,
+    "type": "complex",
+    "image_url": None,
+    "subitems": subitems_list
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/admin/add_existing_item', methods=['POST'])
+@admin
+def admin_add_existing_item():
+  data = request.get_json()
+  try:
+    subskill = Subskill.query.filter_by(id=data['subskill_id'], scope=100).first()
+    item = Item.query.filter_by(label=data['name'], scope=100, subskill=subskill).first()
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  new_connection = ItemConnection(item=item, school=current_user.school)
+  db.session.add(new_connection)
+  db.session.commit()
+
+  res = {
+    "id": item.id,
+    "label": item.label,
+    "type": "simple" if item.image_url else "complex",
+    "image_url": item.image_url if item.image_url else None,
+    "scope": item.scope,
+    "subitems": [
+      {
+        "id": subitem.id,
+        "content": subitem.content,
+      } for subitem in item.subitems
+    ] if item.subitems else None
+  }
+
+  return jsonify(res), 200
+
+
+
+
+
+
+
+
+
+@app.route('/image/<int:id>')
+def display_image(id):
+  ''' Return a requested image '''
+  img = ItemImage.query.filter_by(id=id).first()
+  return Response(img.image, mimetype=img.mimetype), 200

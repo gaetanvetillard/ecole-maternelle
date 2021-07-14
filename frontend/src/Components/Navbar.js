@@ -84,8 +84,7 @@ const Navbar = props => {
           onClose={handleClose}
         >
           <MenuItem onClick={() => props.history.push('/super-admin')}>Gérer le site</MenuItem>
-          <MenuItem onClick={() => props.history.push('/super-admin/schools')}>Gérer les classes</MenuItem>
-          <MenuItem onClick={() => props.history.push('/super-admin/users')}>Gérer les utilisateurs</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super-admin/schools')}>Gérer les écoles</MenuItem>
         </Menu>
         
   

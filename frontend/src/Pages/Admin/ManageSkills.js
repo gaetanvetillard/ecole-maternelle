@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { H1, H2, H3 } from "../../Styles/Titles";
+import { H1 } from "../../Styles/Titles";
 
 import {Grid} from "@material-ui/core"
 import Navbar from "../../Components/Navbar";
-import {LoadingPage} from '../../Components/Loading';
-import {BlocPage, WrapperDiv} from '../../Styles/Divs';
-import {YellowDividerH2} from '../../Styles/Dividers';
+import { LoadingPage } from '../../Components/Loading';
+import {BlocPage} from '../../Styles/Divs';
+import { Skill } from "../../Components/Skills/SuperAdminSkill";
 
 const ManageSkills = props => {
   const [userInfos, setUserInfos] = useState(null);
   const [globalPageHasLoading, setGlobalPageHasLoading] = useState(false);
+  const [skills, setSkills] = useState([]);
 
 
   useEffect(() => {
@@ -21,7 +22,19 @@ const ManageSkills = props => {
               props.history.push('/')
             } else {
               setUserInfos(data);
-              setGlobalPageHasLoading(true);
+              fetch('/api/admin/get_skills')
+                .then(res => {
+                  if (res.ok) {
+                    res.json()
+                      .then(data => {
+                        setSkills(data);
+                        setGlobalPageHasLoading(true);
+                      })
+                  } else {
+                    res.json()
+                      .then(data => alert(data['Error']))
+                  }
+                })
             }
           })
       })
@@ -39,21 +52,13 @@ const ManageSkills = props => {
 
         <Grid container>
           <Grid item xs={12} align="center">
-            <WrapperDiv style={{margin: "10px 5%"}}>
-              <H2>Apprendre</H2>
-              <YellowDividerH2 />
-              
-              {/* Subskill */}
-              <Grid container>
-                <Grid item xs={12} align="center">
-                  <WrapperDiv>
-                    <H3>Devenir élève</H3>
-
-                  </WrapperDiv>
-                </Grid>
-              </Grid>
-            </WrapperDiv>
-          </Grid>
+            {skills.length > 0 && skills.map(skill => {
+              return <Skill skill={skill} key={skill.id} setSkills={setSkills} role={100}/>
+            })}
+            {skills.length === 0 &&
+              <h3>Aucune compétence</h3>
+            }
+            </Grid>
         </Grid>
 
 

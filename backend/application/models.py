@@ -104,7 +104,6 @@ class Subitem(db.Model):
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
     item = db.relationship("Item", back_populates="subitems")
     content = db.Column(db.String(25))
-    type = db.Column(db.String(50))
 
 
 class ItemImage(db.Model):

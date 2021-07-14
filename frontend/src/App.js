@@ -8,7 +8,6 @@ import AccountPage from './Pages/AccountPage';
 
 import SuperAdminPanel from './Pages/SuperAdmin/SuperAdminPanel';
 import SuperAdminSchools from "./Pages/SuperAdmin/SuperAdminSchools";
-import SuperAdminUsers from "./Pages/SuperAdmin/SuperAdminUsers";
 import SuperAdminSkills from './Pages/SuperAdmin/SuperAdminSkills';
 
 
@@ -32,7 +31,6 @@ const App = () => {
         {/* Super Admin */}
         <Route exact path="/super-admin" component={SuperAdminPanel} />
         <Route exact path="/super-admin/schools" component={SuperAdminSchools} />
-        <Route exact path="/super-admin/users" component={SuperAdminUsers} />
         <Route exact path="/super-admin/skills" component={SuperAdminSkills} />
         {/* Admin */}
         <Route exact path="/admin" component={AdminPanel} />
