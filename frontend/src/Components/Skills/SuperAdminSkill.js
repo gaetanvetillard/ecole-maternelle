@@ -330,7 +330,7 @@ const AddSubskill = props => {
       setName("");
       props.setAddLoading(true)
 
-      if (props.freeSubskills.includes(name)) {
+      if (props.freeSubskills && props.freeSubskills.includes(name)) {
         props.setFreeSubskills(prev => [...prev].filter(e => e !== name))
       }
 
@@ -426,6 +426,8 @@ const AddItem = props => {
     if (itemType === "simple") {
       if (selectedFile.length > 0 && itemName) {
         props.setAddLoading(true);
+        setItemName('');
+        setSelectedFile(null);
         handleClose();
 
         const formData = new FormData();
@@ -444,6 +446,8 @@ const AddItem = props => {
     } else if (itemType === "complex") {
       if (itemName && subitemsList.length > 0) {
         props.setAddLoading(true);
+        setItemName('');
+        setSubitemsList([]);
         handleClose();
 
         let requestParams = {
@@ -495,7 +499,7 @@ const AddItem = props => {
               res.json()
                 .then(data => {
                   props.setFreeItems(prev => [...prev].filter(e => e !== itemName));
-                  props.setList(prev => [...prev, data])
+                  props.setList(prev => [...prev, data]);
                   props.setAddLoading(false);
                 })
             } else {
@@ -535,7 +539,7 @@ const AddItem = props => {
             :
             <Select
               value={itemName ? itemName : ""}
-              onSelect={e => setItemName(e.target.value)}
+              onChange={e => setItemName(e.target.value)}
               style={{width: "100%"}}
             >
               {props.freeItems && props.freeItems.map((item, index) => {

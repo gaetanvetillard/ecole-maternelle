@@ -1,11 +1,15 @@
 import unicodedata
-from flask import render_template
+from flask import render_template, current_app
 from flask.json import jsonify
+from werkzeug.security import generate_password_hash
 from .models import User
 from . import db
 import unicodedata
 from string import ascii_letters, digits
 from random import sample
+from flask_mail import Mail, Message
+
+SITE_URL = "http://127.0.0.1:5000"
 
 
 def generate_username(firstname:str, name:str):
@@ -68,7 +72,29 @@ def generate_user(data, role: int, classroom, school):
     classroom=classroom,
     school=school
   )
-
+  
   # sending mails
+  send_mail(user)
+
+  user.password = generate_password_hash(
+    password,
+    method='pbkdf2:sha256',
+    salt_length=8
+  )
 
   return user
+
+
+
+def send_mail(user):
+  ''' Send password email for students account '''
+  mail = Mail(current_app)
+  msg = Message("Vos identifiants", sender=(f"{user.school.name}", current_app.config['MAIL_USERNAME']), recipients=[user.email],
+                  reply_to=user.email)
+  if user.role == 1:
+    msg.html = render_template('student_mail.html', user=user, site_url=SITE_URL)
+  elif user.role == 10:
+    msg.html = render_template('teacher_mail.html', user=user, site_url=SITE_URL)
+  elif user.role == 100:
+    msg.html = render_template("admin_mail.html", user=user, site_url=SITE_URL)
+  mail.send(msg)

@@ -3,6 +3,7 @@ from flask import *
 from flask import current_app as app
 from flask_login import current_user, logout_user, login_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .models import *
 from .decorated_functions import *
@@ -19,6 +20,7 @@ ERRORS = {
   "USER_NOT_FOUND": {'Error': "User Not Found"},
   "USER_NOT_IN_A_CLASSROOM": {"Error": "User Isn't In A Classroom"},
   "UNAUTHORIZED": {"Error": "You're not allowed to access to this content"}, 
+  "PASSWORD_DOES_NOT_MATCH": {"Error": "Password Doesn't Match"}
 }
 
 SUCCESS = {
@@ -118,7 +120,7 @@ def login():
   user = User.query.filter_by(username=username).first()
   if not user:
     return jsonify(ERRORS["INVALID_USERNAME"]), 404
-  if password == user.password:
+  if check_password_hash(user.password, password):
     login_user(user)
     return jsonify({
       "username": user.username,
@@ -150,6 +152,47 @@ def is_login():
       "role": None,
     })
 
+
+@app.route('/api/get_my_infos')
+def get_my_infos():
+  if current_user.is_authenticated:
+    return jsonify({
+      "is_login": True,
+      "username": current_user.username,
+      "role": current_user.role,
+      "email": current_user.email
+    })
+  else:
+    return jsonify(ERRORS["TRY_AGAIN"]), 400
+
+
+@app.route('/api/edit_password', methods=['POST'])
+def edit_password():
+  if not current_user.is_authenticated:
+    return jsonify(ERRORS["UNAUTHORIZED"]), 403
+  
+  data = request.get_json()
+  try:
+    user = User.query.filter_by(username=data['username']).first()
+    current_password = data['current_password']
+    new_password = data['new_password']
+    new_password_confirm = data['new_password_confirm']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  if user != current_user:
+    return jsonify(ERRORS["UNAUTHORIZED"]), 403
+  
+  elif not check_password_hash(user.password, current_password):
+    return jsonify(ERRORS['INVALID_PASSWORD']), 403
+  
+  elif new_password != new_password_confirm:
+    return jsonify(ERRORS['PASSWORD_DOES_NOT_MATCH']), 400
+  
+  user.password = generate_password_hash(new_password)
+  db.session.commit()
+
+  return jsonify(SUCCESS["EDIT"]), 200
 
 
 
@@ -1378,6 +1421,7 @@ def teacher_get_student_infos(classroom_id, student_username):
     return jsonify(ERRORS["INVALID_ARGS"]), 400
   
   skills_infos, total_items, total_validated_items = get_validated_skills(student, current_user.school)
+  school = current_user.school
 
   res = {
     "is_allowed": True,
@@ -1386,7 +1430,13 @@ def teacher_get_student_infos(classroom_id, student_username):
     "firstname": student.firstname,
     "skills": skills_infos,
     "total_items": total_items,
-    "total_validated_items": total_validated_items
+    "total_validated_items": total_validated_items,
+    "school": {
+      "name": school.name,
+      "address": school.address,
+      "zipcode": school.zipcode,
+      "city": school.city
+    }
   }
 
   return jsonify(res), 200
@@ -1466,8 +1516,83 @@ def teacher_validate_simple_item():
   return jsonify(SUCCESS["EDIT"]), 200
 
 
+@app.route('/api/teacher/multiple_validation_get_skills')
+@teacher
+def teacher_multiple_validation_get_skills():
+  school = current_user.school
+  all_skills = [skill_connection.skill for skill_connection in school.skills]
+  all_subskills = [subskill_connection.subskill for subskill_connection in school.subskills]
+  all_items = [item_connection.item for item_connection in school.items]
+  students = [student for student in current_user.classroom.users if student.role == ROLES['student']]
+
+  res = [
+    {
+      "id": skill.id,
+      "name": skill.name,
+      "subskills": [
+        {
+          "id": subskill.id,
+          "name": subskill.name,
+          "items": [
+            {
+              "id": item.id,
+              "label": item.label,
+              "type": "simple" if item.image_url else "complex",
+              "image_url": item.image_url if item.image_url else None,
+              "subitems": [
+                {
+                  "id": subitem.id,
+                  "content": subitem.content,
+                } for subitem in item.subitems
+              ] if item.subitems else None,
+              "students": [{
+                "id": student.id,
+                "name": student.name,
+                "firstname": student.firstname,
+                'validation': True if Validation.query.filter_by(user=student, item=item, status=1).first() else False
+              } for student in students]
+            } for item in subskill.items if item in all_items
+          ],
+        } for subskill in skill.subskills if subskill in all_subskills
+      ],
+    } for skill in all_skills
+  ]
+
+  return jsonify(res), 200
 
 
+@app.route('/api/teacher/multiple_validation', methods=["POST"])
+def teacher_multiple_validation():
+  data = request.get_json()
+  try:
+    item = Item.query.filter_by(id=data['item_id']).first()
+    students_infos = data['students']
+    date = data['date']
+
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  for student in students_infos:
+    student_ = User.query.filter_by(id=student['id']).first()
+    validation = Validation.query.filter_by(user=student_, item=item).first()
+    
+    if not validation and not student['validation']:
+      continue
+    elif validation and not student['validation']:
+      db.session.delete(validation)
+    elif validation and student['validation'] and validation.status == 0:
+      validation.status = 1,
+      validation.date = date
+    elif not validation and student['validation']:
+      new_validation = Validation(
+        item=item,
+        user=student_,
+        status=1,
+        date=date
+      )
+
+  db.session.commit()
+  return jsonify(SUCCESS["EDIT"]), 200
 
   
 
@@ -1488,6 +1613,7 @@ def student_get_infos():
     return jsonify(ERRORS["INVALID_ARGS"]), 400
   
   skills_infos, total_items, total_validated_items = get_validated_skills(student, current_user.school)
+  school = current_user.school
 
   res = {
     "is_allowed": True,
@@ -1496,7 +1622,13 @@ def student_get_infos():
     "firstname": student.firstname,
     "skills": skills_infos,
     "total_items": total_items,
-    "total_validated_items": total_validated_items
+    "total_validated_items": total_validated_items,
+    "school": {
+      "name": school.name,
+      "address": school.address,
+      "zipcode": school.zipcode,
+      "city": school.city
+    }
   }
 
   return jsonify(res), 200

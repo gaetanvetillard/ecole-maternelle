@@ -92,7 +92,7 @@ const ManageUser = props => {
 
   const handleDeleteUser = () => {
     let confirmation = null
-    if (userInfos.role === 0) {
+    if (userInfos.role === 1) {
       confirmation = window.confirm(`Attention, vous êtes sur le point de supprimer le compte de ${userInfos.firstname} ${userInfos.name}. Êtes-vous sur de vouloir continuer ?`)
     } else if (userInfos.role === 10) {
       confirmation = window.confirm(`Attention, vous êtes sur le point de supprimer le compte de ${userInfos.firstname} ${userInfos.name}. Cette action supprimera aussi la classe reliée à ce compte s'il y en a une (mais ne supprimera pas les comptes des élèves). Êtes-vous sur de vouloir continuer ?`)

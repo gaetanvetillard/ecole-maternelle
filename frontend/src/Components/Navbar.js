@@ -83,8 +83,8 @@ const Navbar = props => {
           open={Boolean(anchorEl)}
           onClose={handleClose}
         >
-          <MenuItem onClick={() => props.history.push('/super-admin')}>Gérer le site</MenuItem>
-          <MenuItem onClick={() => props.history.push('/super-admin/schools')}>Gérer les écoles</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super_admin')}>Gérer le site</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super_admin/schools')}>Gérer les écoles</MenuItem>
         </Menu>
         
   

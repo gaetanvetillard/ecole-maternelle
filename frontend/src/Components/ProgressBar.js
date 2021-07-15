@@ -4,6 +4,7 @@ import styled from 'styled-components';
 const Wrapper = styled.div`
   width: 100%;
   height: 34px;
+  max-width: 1100px;
   border-radius: 34px;
   position: relative;
   display: flex;

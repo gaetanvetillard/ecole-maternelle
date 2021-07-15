@@ -65,7 +65,7 @@ const SuperAdminPanel = props => {
                   <YellowDividerH2 />
                 </Grid>
                 <Grid item xs={6} align="center" style={{padding: "0 5px 0 0"}}>
-                  <WrapperDiv style={{cursor: "pointer"}} onClick={() => props.history.push('/super-admin/schools')}>
+                  <WrapperDiv style={{cursor: "pointer"}} onClick={() => props.history.push('/super_admin/schools')}>
                     <H3 style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                       Nombre d'écoles <ChevronRight />
                     </H3>
@@ -96,7 +96,7 @@ const SuperAdminPanel = props => {
               <YellowDividerH2 />
               <Grid container>
                 <Grid item xs={12} align="center">
-                  <ListItemDiv onClick={() => props.history.push('/super-admin/skills')}>
+                  <ListItemDiv onClick={() => props.history.push('/super_admin/skills')}>
                     <H3>Liste des compétences</H3>
                     <ChevronRight />
                   </ListItemDiv>

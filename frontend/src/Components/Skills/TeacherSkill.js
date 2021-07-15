@@ -26,7 +26,7 @@ export const Skill = props => {
           >
               <div style={{display: "flex", justifyContent:"center", alignItems: "center", flexDirection: "column"}}>
                 <H2 style={{margin: 0, marginBottom: 5}}>{skill.name}</H2>
-                <ProgressBarXS validated={validatedItemsCount} total={skill.items_count}/>
+                {!props.multiple && <ProgressBarXS validated={validatedItemsCount} total={skill.items_count}/>}
               </div>
               {isExpand ?
                 <ExpandLess style={{width: 32, height: 32}} />
@@ -42,6 +42,7 @@ export const Skill = props => {
                 studentUsername={props.studentUsername} 
                 setValidatedItemsCount={setValidatedItemsCount}
                 setTotalValidatedItems={props.setTotalValidatedItems}
+                multiple={props.multiple}
               />
             })
           }
@@ -88,6 +89,7 @@ const Subskill = props => {
                 studentUsername={props.studentUsername} 
                 setValidatedItemsCount={props.setValidatedItemsCount}
                 setTotalValidatedItems={props.setTotalValidatedItems}
+                multiple={props.multiple}
               />)}
         </WrapperDiv>
       }
@@ -98,10 +100,20 @@ const Subskill = props => {
 
 const Item = props => {
   const [complexDialogOpen, setComplexDialogOpen] = useState(false);
+  const [multipleDialogOpen, setMultipleDialogOpen] = useState(false);
   const subskill = props.subskill
   const [item, setItem] = useState(props.item)
   var validatedSubitems = null
+  var multipleValidationStudentsCount = 0
+  if (props.multiple) {
+    for (let s of item.students) {
+      if (s.validation) {
+        multipleValidationStudentsCount++;
+      }
+    }
+  }
   if (item.subitems) {validatedSubitems = [...item.subitems].filter(subitem_ => subitem_.validation)}
+
 
   const handleCheckSubitem = (subitem) => {
     setItem(prev => {
@@ -221,6 +233,36 @@ const Item = props => {
 
   }
 
+  const handleMultipleValidation = () => {
+    setMultipleDialogOpen(!multipleDialogOpen);
+
+    let requestParams = {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        item_id: item.id,
+        students: item.students,
+        date: new Date().toLocaleDateString("fr-FR", { day: '2-digit', month: 'long', year: "numeric" }),
+      })
+    }
+
+    fetch('/api/teacher/multiple_validation', requestParams)  
+      .then(res => {
+        if (!res.ok) {
+          res.json()  
+            .then(data => alert(data['Error']))
+        }
+      })
+  }
+
+  const handleCheckStudent = (student) => {
+    let new_student_list = [...item.students].filter(s => s.id !== student.id)
+    new_student_list.push({...student, validation: !student.validation})
+
+    setItem(prev => {
+      return {...prev, students: new_student_list}
+    })
+  }
 
   return (
     <>
@@ -233,12 +275,17 @@ const Item = props => {
           }
           <h4 className={"title"}>{subskill.name} ({props.index+1})</h4>
           <div className="content">
-            {item.type === "complex" && validatedSubitems.length > 0 &&
+            {item.type === "complex" && !props.multiple && validatedSubitems.length > 0 &&
               validatedSubitems.map((subitem, index) => {
                 return <p key={index} style={{padding: 5}}>{subitem.content}</p>
               })
             }
-            {item.type === "complex" && validatedSubitems.length === 0 &&
+            {item.type === "complex" && props.multiple &&
+              item.subitems.map((subitem, index) => {
+                return <p key={index} style={{padding: 5}}>{subitem.content}</p>
+              })
+            }
+            {item.type === "complex" && !props.multiple && validatedSubitems.length === 0 &&
               <p style={{pading: 5}}>Aucun sous-item validé</p>
             }
             {item.type === "simple" &&
@@ -260,7 +307,7 @@ const Item = props => {
             onClick={() => setComplexDialogOpen(true)}
           ><strong>{item.validation.date}</strong></ValidationButton>
         }
-        {item.type === "complex" && props.role === 10 && !item.validation &&
+        {item.type === "complex" && props.role === 10 && !props.multiple && !item.validation &&
           <ValidationButton 
             style={{background: "black", color: "#ffb535"}}
             onClick={() => setComplexDialogOpen(true)}  
@@ -268,17 +315,17 @@ const Item = props => {
         }
 
         {/* SIMPLE ITEMS */}
-        {item.type === "simple" && props.role === 10 && item.validation && item.validation.status === 0 &&
+        {item.type === "simple" && props.role === 10 && !props.multiple && item.validation && item.validation.status === 0 &&
           <ValidationButton
             onClick={handleValidationSimpleItem}
           >En cours de validation</ValidationButton>
         }
-        {item.type === "simple" && props.role === 10 && item.validation && item.validation.status === 1 &&
+        {item.type === "simple" && props.role === 10 && !props.multiple && item.validation && item.validation.status === 1 &&
           <ValidationButton
             onClick={handleValidationSimpleItem}
           ><strong>{item.validation.date}</strong></ValidationButton>
         }
-        {item.type === "simple" && props.role === 10 && !item.validation &&
+        {item.type === "simple" && props.role === 10 && !props.multiple && !item.validation &&
           <ValidationButton
             onClick={handleValidationSimpleItem}
             style={{background: "black", color: "#ffb535"}}
@@ -287,38 +334,54 @@ const Item = props => {
 
         {/* STUDENT BUTTONS STATIC */}
         {/* COMPLEX ITEMS */}
-        {item.type === "complex" && props.role === 1 && item.validation && item.validation.status === 0 &&
+        {item.type === "complex" && props.role === 1 && !props.multiple && item.validation && item.validation.status === 0 &&
           <ValidationButton
             style={{cursor: "default"}} 
           >En cours de validation</ValidationButton>
         }
-        {item.type === "complex" && props.role === 1 && item.validation && item.validation.status === 1 &&
+        {item.type === "complex" && props.role === 1 && !props.multiple && item.validation && item.validation.status === 1 &&
           <ValidationButton
             style={{cursor: "default"}} 
           ><strong>{item.validation.date}</strong></ValidationButton>
         }
-        {item.type === "complex" && props.role === 1 && !item.validation &&
+        {item.type === "complex" && props.role === 1 && !props.multiple && !item.validation &&
           <ValidationButton 
             style={{background: "black", color: "#ffb535", cursor: "default"}}
           >Non évaluée</ValidationButton>
         }
 
         {/* SIMPLE ITEMS */}
-        {item.type === "simple" && props.role === 1 && item.validation && item.validation.status === 0 &&
+        {item.type === "simple" && props.role === 1 && !props.multiple && item.validation && item.validation.status === 0 &&
           <ValidationButton
             style={{cursor: "default"}} 
           >En cours de validation</ValidationButton>
         }
-        {item.type === "simple" && props.role === 1 && item.validation && item.validation.status === 1 &&
+        {item.type === "simple" && props.role === 1 && !props.multiple && item.validation && item.validation.status === 1 &&
           <ValidationButton
             style={{cursor: "default"}} 
           ><strong>{item.validation.date}</strong></ValidationButton>
         }
-        {item.type === "simple" && props.role === 1 && !item.validation &&
+        {item.type === "simple" && props.role === 1 && !props.multiple && !item.validation &&
           <ValidationButton
             style={{background: "black", color: "#ffb535", cursor: "default"}}
           >Non évaluée</ValidationButton>
         }
+
+
+
+        {/* MULTIPLE VALIDATION */}
+        {item.type === "complex" && props.role === 10 && props.multiple &&
+          <ValidationButton
+            style={{background: "#252525", color: "#ffb535", cursor: "default"}}
+          >Indisponible</ValidationButton>
+        }
+        {item.type === "simple" && props.role === 10 && props.multiple &&
+          <ValidationButton
+            style={{background: "#ffb535"}}
+            onClick={() => setMultipleDialogOpen(true)}
+          >{multipleValidationStudentsCount}/{item.students.length} élèves</ValidationButton>
+        }
+
       </div>
       {item.type === "complex" && props.role === 10 &&
         <Dialog
@@ -337,6 +400,34 @@ const Item = props => {
                       <Checkbox 
                         checked={subitem.validation}
                         onChange={() => handleCheckSubitem(subitem)}
+                        color="primary"
+                      />
+                    }
+                  />
+                )
+              })}
+            </FormGroup>
+          </DialogContent>
+        </Dialog>
+      }
+
+      {item.type === "simple" && props.role === 10 && props.multiple &&
+        <Dialog
+        open={multipleDialogOpen}
+        onClose={handleMultipleValidation}
+        >
+          <DialogTitle>Liste des élèves</DialogTitle>
+          <DialogContent>
+            <FormGroup>
+              {item.students.length > 0 && item.students.sort((a, b) => a.name.localeCompare(b.name)).map(student => {
+                return (
+                  <FormControlLabel 
+                    key={student.id}
+                    label={`${student.name} ${student.firstname}`}
+                    control={
+                      <Checkbox 
+                        checked={student.validation}
+                        onChange={() => handleCheckStudent(student)}
                         color="primary"
                       />
                     }

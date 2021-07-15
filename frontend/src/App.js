@@ -23,6 +23,7 @@ import TeacherPanel from './Pages/Teachers/TeacherPanel';
 
 
 import StudentPage from './Pages/Students/StudentPage';
+import SkillsListTeacher from "./Pages/Teachers/SkillsListTeacher";
 
 
 
@@ -48,7 +49,7 @@ const App = () => {
         {/* Teachers */}
         <Route exact path="/teacher" component={TeacherPanel} />
         <Route exact path="/teacher/:classroomId/:studentUsername" component={StudentPage} />
-
+        <Route exact path='/teacher/skills' component={SkillsListTeacher} />
 
         {/* Student */}
         <Route exact path="/student" component={StudentPage} />
