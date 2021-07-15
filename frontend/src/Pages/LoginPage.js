@@ -12,7 +12,27 @@ const LoginPage = props => {
     axios.get('/api/is_login')
       .then(res => {
         if (res.data.is_login) {
-          props.history.push('/')
+          const role = res.data.role;
+          switch (role) {
+            case 1:
+              props.history.push(`/student/`)
+              break;
+          
+            case 10:
+              props.history.push(`/teacher`)
+              break;
+            
+            case 100:
+              props.history.push(`/admin`)
+              break;
+            
+            case 1000:
+              props.history.push(`/super_admin`)
+              break;
+
+            default:
+              break;
+          }
         }
       })
       .catch(err => {
@@ -34,7 +54,31 @@ const LoginPage = props => {
       fetch('/api/login', requestParams)
         .then(res => {
           if (res.ok) {
-            props.history.push('/');
+            res.json()
+              .then(data => {
+                const role = data.role;
+                console.log(data)
+                switch (role) {
+                  case 1:
+                    props.history.push(`/student/`)
+                    break;
+                
+                  case 10:
+                    props.history.push(`/teacher`)
+                    break;
+                  
+                  case 100:
+                    props.history.push(`/admin`)
+                    break;
+                  
+                  case 1000:
+                    props.history.push(`/super_admin`)
+                    break;
+    
+                  default:
+                    break;
+                }
+              })
           } else {
             res.json().then(data => console.log(data))
           }

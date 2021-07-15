@@ -28,7 +28,8 @@ const SearchLogo = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid #ffb535;
+  border: 2px solid #ffb535;
+  margin-left: -1px;
 
   @media screen and (min-width: 768px) {
     height: 50px;

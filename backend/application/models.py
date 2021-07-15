@@ -125,7 +125,9 @@ class Validation(db.Model):
     user = db.relationship("User", back_populates="validated_items")
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"), primary_key=True)
     item = db.relationship("Item", back_populates="validated_users")
-    date = db.Column(db.String(50))
+    date = db.Column(db.String(50), nullable=True)
+    validated_subitems = db.Column(db.String(500), nullable=True)
+    status = db.Column(db.Integer, nullable=True)
 
     def __repr__(self) -> str:
         return f"<Validation user={self.user.username} item={self.item.label}>"

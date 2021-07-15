@@ -11,7 +11,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 
 
 
-const ItemDiv = styled.div`
+export const ItemDiv = styled.div`
   position: relative;
   margin-bottom: 4px;
   min-width: 150px;
@@ -52,6 +52,17 @@ const ItemDiv = styled.div`
     margin-bottom: 5px;
     font-size: 18px;
     line-height: 18px;
+  }
+
+  & .validation_overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0,0,0,0.4);
+    border-radius: 8px;
   }
 
   @media screen and (min-width: 768px) {
@@ -121,7 +132,7 @@ export const Skill = props => {
             <LoadingItem />
           }
           {isExpand &&
-            <AddSubskill skill={skill} setAddLoading={setAddLoading} setSubskills={setSubskills} freeSubskills={freeSubskills} setFreeSubskills={setFreeSubskills}/>
+            <AddSubskill skill={skill} setAddLoading={setAddLoading} setSubskills={setSubskills} freeSubskills={freeSubskills} setFreeSubskills={setFreeSubskills} role={props.role}/>
           }
           </WrapperDiv>
       </Grid>
@@ -130,7 +141,7 @@ export const Skill = props => {
 }
 
 
-export const Subskill = props => {
+const Subskill = props => {
   const [isExpand, setIsExpand] = useState(false);
   const [items, setItems] = useState(props.subskill.items);
   const [addLoading, setAddLoading] = useState(false);
@@ -172,24 +183,24 @@ export const Subskill = props => {
         }
       </div>
       {isExpand && items.length > 0 &&
-        <div style={{display: "flex", flexWrap: "nowrap", overflow: "scroll hidden", width: "100%"}}>
+        <WrapperDiv style={{display: "flex", flexWrap: "nowrap", overflow: "scroll hidden", marginTop: 0}}>
           {items.map((item, index) => <Item item={item} subskill={subskill} key={item.id} index={index} setFreeItems={setFreeItems} setItems={setItems} role={props.role}/>)}
           {addLoading && isExpand &&
             <div style={{display: "flex", alignItems:"center"}}>
               <LoadingItem />
             </div>
           }
-        </div>
+        </WrapperDiv>
       }
       {isExpand &&
-        <AddItem subskill_id={subskill.id} setList={setItems} freeItems={freeItems} setFreeItems={setFreeItems} setAddLoading={setAddLoading} />
+        <AddItem subskill_id={subskill.id} setList={setItems} freeItems={freeItems} setFreeItems={setFreeItems} setAddLoading={setAddLoading} role={props.role} />
       }
     </WrapperDiv>
   )
 }
 
 
-export const Item = props => {
+const Item = props => {
   const subskill = props.subskill
   const item = props.item
 
@@ -198,7 +209,7 @@ export const Item = props => {
     if (confirmation) {
 
       props.setItems(prev => [...prev].filter(item_ => item_.id !== item.id))
-      props.setFreeItems(prev => [...prev, item.label])
+      props.role === 100 && props.setFreeItems(prev => [...prev, item.label])
 
       let requestParams = {
         method: "POST",
@@ -230,13 +241,13 @@ export const Item = props => {
             })
           }
           {item.type === "simple" &&
-            <img src={`/image/${item.id}`} alt="illustration" />
+            <img src={`${item.image_url}`} alt="illustration" />
           }
         </div>
         <p className="label">{item.label}</p>
       </ItemDiv>
       <Button
-        style={{marginRight: 10, marginBottom: 10, borderRadius: 10, borderColor: "#ffb535"}}
+        style={{marginRight: 10, borderRadius: 10, borderColor: "#ffb535"}}
         variant="outlined"
         onClick={handleDeleteItem}
       >Supprimer</Button>
@@ -357,7 +368,7 @@ const AddSubskill = props => {
       <Grid item xs={12} align="center">
         <WrapperDiv>
           <H3>Ajouter une sous-compétence</H3>
-          <YellowDividerH2 style={{margin: 0}} />
+          <YellowDividerH2 style={{margin: 0, marginTop: -5}} />
           <form method="POST" style={{display: "flex", justifyContent: "center", alignItems: "flex-end"}}>
             {props.role === 1000 ?
               <TextField 
@@ -502,7 +513,7 @@ const AddItem = props => {
 
   return (
     <div>
-      <Button variant="contained" onClick={handleClickOpen}>
+      <Button variant="contained" onClick={handleClickOpen} style={{marginTop: 10}}>
         Ajouter un item
       </Button>
       <Dialog open={open} onClose={handleClose}>
@@ -519,12 +530,12 @@ const AddItem = props => {
               fullWidth
               required
               value={itemName}
-              onSelect={e => setItemName(e.target.value)}
+              onChange={e => setItemName(e.target.value)}
             />
             :
             <Select
               value={itemName ? itemName : ""}
-              onChange={e => setItemName(e.target.value)}
+              onSelect={e => setItemName(e.target.value)}
               style={{width: "100%"}}
             >
               {props.freeItems && props.freeItems.map((item, index) => {
@@ -547,12 +558,14 @@ const AddItem = props => {
               control={<Radio style={{color: "#ffb535"}} />} 
               label="Complexe"
             />
-            <FormControlLabel 
-              value="existing" 
-              control={<Radio style={{color: "#ffb535"}} />} 
-              label="Existant"
-              disabled={props.freeItems.length > 0 ? false : true}
-            />
+            {props.role !== 1000 && 
+              <FormControlLabel 
+                value="existing" 
+                control={<Radio style={{color: "#ffb535"}} />} 
+                label="Existant"
+                disabled={props.freeItems.length > 0 ? false : true}
+              />
+            }
             
           </RadioGroup>
 
@@ -588,7 +601,7 @@ const AddItem = props => {
                 return <li key={index}>{subitem}</li>
               })}
             </ol>
-            {subitemsList.length < 30 &&
+            {subitemsList && subitemsList.length < 30 &&
               <form style={{display: "flex", justifyContent: "center"}}>
                 <TextField 
                   label="Ajouter un sous-item"
@@ -615,7 +628,11 @@ const AddItem = props => {
           <Button variant="outlined" onClick={handleClose}>
             Annuler
           </Button>
-          <Button variant="contained" onClick={handleAddItem}>
+          <Button 
+            variant="contained" 
+            onClick={handleAddItem}
+            disabled={(itemType === "existing" && props.freeItems.length === 0) ? true : false}
+          >
             Ajouter
           </Button>
         </DialogActions>

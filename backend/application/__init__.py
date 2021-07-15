@@ -3,6 +3,7 @@ from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from flask_migrate import Migrate
 
 
 # class ModelView_(ModelView):
@@ -34,6 +35,7 @@ def init_app():
 
     #Database 
     db.init_app(app)
+    migrate = Migrate(app, db)
 
     
     with app.app_context():

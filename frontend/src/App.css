@@ -38,6 +38,9 @@ h1,h2,h3,h4,h5,h6,p {
   background-color: #ffb535!important;
 }
 
+.xs {
+	height: 24px!important;
+}
 
 @media screen and (min-width: 768px) {
 	nav .MuiSvgIcon-root {
@@ -69,6 +72,9 @@ h1,h2,h3,h4,h5,h6,p {
 	}
 	p {
 		font-size: 20px;
+	}
+	.xs {
+		height: 34px!important;
 	}
 
 

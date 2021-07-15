@@ -137,7 +137,7 @@ const ManageClassroom = props => {
 										<Grid container>
 											<Grid item md={6} xs={12} align="center">
 												<WrapperDiv style={{margin: "5px"}}>
-													<H3>Changer de maître(sse)</H3>
+													<H3>Changer de maître·sse</H3>
 													<AddFormAdminVersion 
 														url='/api/admin/transfer_classroom' 
 														oldValue={teachers[teachers.length-1]}
@@ -153,7 +153,7 @@ const ManageClassroom = props => {
 
 											<Grid item md={6} xs={12} align="center">
 												<WrapperDiv style={{margin: "5px"}}>
-													<H3>Ajouter un élève</H3>
+													<H3>Ajouter un·e élève</H3>
 													<AddFormAdminVersion 
 														url='/api/admin/add_student' 
 														freeList={classroomInfos.free_students} 
@@ -162,7 +162,7 @@ const ManageClassroom = props => {
 														setList={setStudentsList}
 														classroom_id={classroomInfos.id}
 														helperText="Aucun élève disponible."
-														buttonText="Ajouter un élève"
+														buttonText="Ajouter un·e élève"
 													/>
 												</WrapperDiv>
 											</Grid>

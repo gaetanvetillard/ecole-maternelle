@@ -98,6 +98,59 @@ const Navbar = props => {
         </ButtonGroup>
       </NavbarBalise>
     )
+  } else if (props.userInfos.role === 10) {
+    return (
+      <NavbarBalise>
+        <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
+          <MenuIcon fontSize='large' />
+        </Button>
+        <Menu
+          anchorEl={anchorEl}
+          keepMounted
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={() => props.history.push('/teacher')}>Votre classe</MenuItem>
+          <MenuItem onClick={() => props.history.push('/teacher/skills')}>Les compétences</MenuItem>
+        </Menu>
+        
+  
+        <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
+          <Button>
+            <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
+          </Button>
+          <Button>
+            <ExitToApp fontSize='large' onClick={handleLogout}/>
+          </Button>
+        </ButtonGroup>
+      </NavbarBalise>
+    )
+  } else if (props.userInfos.role === 1) {
+    return (
+      <NavbarBalise>
+        <Button onClick={(e) => setAnchorEl(e.currentTarget)} style={{ marginLeft: "10px" }}>
+          <MenuIcon fontSize='large' />
+        </Button>
+        <Menu
+          anchorEl={anchorEl}
+          keepMounted
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={() => props.history.push('/student')}>Vos compétences</MenuItem>
+        </Menu>
+        
+  
+        <ButtonGroup variant="text" style={{ marginRight: '10px' }}>
+          <Button>
+            <AccountCircle fontSize='large' onClick={() => props.history.push('/account')} />
+          </Button>
+          <Button>
+            <ExitToApp fontSize='large' onClick={handleLogout}/>
+          </Button>
+        </ButtonGroup>
+      </NavbarBalise>
+    )
   }
   
 };

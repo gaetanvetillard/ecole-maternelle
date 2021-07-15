@@ -19,6 +19,12 @@ import ManageUser from './Pages/Admin/ManageUser';
 import ManageSkills from './Pages/Admin/ManageSkills';
 
 
+import TeacherPanel from './Pages/Teachers/TeacherPanel';
+
+
+import StudentPage from './Pages/Students/StudentPage';
+
+
 
 const App = () => {
 
@@ -29,9 +35,9 @@ const App = () => {
         <Route exact path="/" component={LoginPage} />
         <Route exact path="/account" component={AccountPage} />
         {/* Super Admin */}
-        <Route exact path="/super-admin" component={SuperAdminPanel} />
-        <Route exact path="/super-admin/schools" component={SuperAdminSchools} />
-        <Route exact path="/super-admin/skills" component={SuperAdminSkills} />
+        <Route exact path="/super_admin" component={SuperAdminPanel} />
+        <Route exact path="/super_admin/schools" component={SuperAdminSchools} />
+        <Route exact path="/super_admin/skills" component={SuperAdminSkills} />
         {/* Admin */}
         <Route exact path="/admin" component={AdminPanel} />
         <Route exact path="/admin/classrooms" component={ManageClassrooms} />
@@ -40,9 +46,13 @@ const App = () => {
         <Route exact path="/admin/users/:user_id" component={ManageUser} />
         <Route exact path="/admin/skills" component={ManageSkills} />
         {/* Teachers */}
+        <Route exact path="/teacher" component={TeacherPanel} />
+        <Route exact path="/teacher/:classroomId/:studentUsername" component={StudentPage} />
 
 
         {/* Student */}
+        <Route exact path="/student" component={StudentPage} />
+
 
         <Route component={ErrorPage} />
       </Switch>

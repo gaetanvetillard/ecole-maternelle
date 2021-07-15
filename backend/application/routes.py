@@ -1,3 +1,4 @@
+from re import A
 from flask import *
 from flask import current_app as app
 from flask_login import current_user, logout_user, login_user
@@ -15,7 +16,9 @@ ERRORS = {
   'TEACHER_NOT_FOUND': {"Error": "Teacher Not Found"},
   'ALREADY_IN_A_CLASSROOM': {"Error": "Teacher Is Already In A Classroom"},
   "USER_NOT_IN_A_SCHOOL": {"Error": "User Isn't In A School"},
-  "USER_NOT_FOUND": {'Error': "User Not Found"}
+  "USER_NOT_FOUND": {'Error': "User Not Found"},
+  "USER_NOT_IN_A_CLASSROOM": {"Error": "User Isn't In A Classroom"},
+  "UNAUTHORIZED": {"Error": "You're not allowed to access to this content"}, 
 }
 
 SUCCESS = {
@@ -25,6 +28,82 @@ SUCCESS = {
   "DELETE": {"Success": "Successfully deleted"},
   "ADD": {"Success": "Successfully added"}
 }
+
+
+
+def get_validated_skills(student, school):
+  all_skills = [skill_connection.skill for skill_connection in school.skills]
+  all_subskills = [subskill_connection.subskill for subskill_connection in school.subskills]
+  all_items = [item_connection.item for item_connection in school.items]
+
+  res = []
+  total_items_count = 0
+  total_validated_items_count = 0
+
+
+  for skill in all_skills:
+    subskills = []
+    validated_items_count = 0
+    items_count = 0
+    for subskill in skill.subskills:
+      if subskill in all_subskills:
+        items = []
+        for item in subskill.items:
+          if item in all_items:
+            items_count += 1
+            total_items_count += 1
+            # Check if item validated
+            validation = Validation.query.filter_by(user=student, item=item).first()
+            if validation and validation.status >= 0 and validation.validated_subitems:
+              validated_subitems = [int(a) for a in validation.validated_subitems[1:-1].split(',')]
+
+            if validation and validation.status == 1:
+              validated_items_count += 1
+              total_validated_items_count += 1
+
+            item_object = {
+              "id": item.id,
+              "label": item.label,
+              "type": "simple" if item.image_url else "complex",
+              "image_url": item.image_url if item.image_url else None,
+              "validation": {
+                "status": validation.status,
+                "date": validation.date if validation.date else None,
+              } if validation else None,
+              "subitems": [
+                {
+                  "id": subitem.id,
+                  "content": subitem.content,
+                  "validation": True if (validation and subitem.id in validated_subitems) else False
+                } for subitem in item.subitems
+              ] if item.subitems else None
+            }
+
+            items.append(item_object)
+        
+        subskill_object = {
+          "id": subskill.id,
+          "name": subskill.name,
+          "items": items
+        }
+        
+        subskills.append(subskill_object)
+
+    skill_object = {
+      "id": skill.id,
+      "name": skill.name,
+      "validated_items_count": validated_items_count,
+      "items_count": items_count,
+      "subskills": subskills
+    }
+    res.append(skill_object)
+
+
+  return res, total_items_count, total_validated_items_count
+
+
+
+
 
 
 
@@ -41,7 +120,9 @@ def login():
     return jsonify(ERRORS["INVALID_USERNAME"]), 404
   if password == user.password:
     login_user(user)
-    return jsonify(SUCCESS['LOGIN']), 200
+    return jsonify({
+      "username": user.username,
+      "role": user.role}), 200
   else:
     return jsonify(ERRORS["INVALID_PASSWORD"]), 403
 
@@ -336,6 +417,7 @@ def super_admin_add_simple_item():
     filename=secure_filename(image.filename)
   )
   db.session.add(new_image)
+  db.session.commit()
 
   new_item = Item(
     label=name,
@@ -411,10 +493,12 @@ def super_admin_delete_item():
 
   try:
     item = Item.query.filter_by(id=data['id']).first()
+    image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
   except:
     return jsonify(ERRORS["INVALID_ARGS"]), 400
   
   db.session.delete(item)
+  db.session.delete(image)
   db.session.commit()
   return jsonify(SUCCESS["DELETE"]), 200
 
@@ -1009,7 +1093,10 @@ def admin_delete_item():
   if item.scope == 100:
     db.session.delete(item_connection)
   else:
-    db.session.delete(item)
+    image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
+    if image:
+      db.session.delete(item)
+    db.session.delete(image)
     db.session.delete(item_connection)
   db.session.commit()
   return jsonify(SUCCESS["DELETE"]), 200
@@ -1119,6 +1206,7 @@ def admin_add_simple_item():
     filename=secure_filename(image.filename)
   )
   db.session.add(new_image)
+  db.session.commit()
 
   new_item = Item(
     label=name,
@@ -1126,6 +1214,7 @@ def admin_add_simple_item():
     image_url=f"/image/{new_image.id}"
   )
   db.session.add(new_item)
+  db.session.commit()
 
   new_connection = ItemConnection(item=new_item, school=current_user.school)
   db.session.add(new_connection)
@@ -1225,6 +1314,192 @@ def admin_add_existing_item():
 
 
 
+
+
+# Teacher Routes
+@app.route('/api/teacher/get_classroom_infos')
+@teacher
+def teacher_get_classroom_infos():
+  classroom = current_user.classroom
+  if not classroom:
+    return jsonify(ERRORS["USER_NOT_IN_A_CLASSROOM"]), 400
+
+  teacher = User.query.filter_by(classroom=classroom, role=ROLES["teacher"]).first()
+  students = User.query.filter_by(classroom=classroom, role=ROLES["student"]).all()
+
+  res = {
+    "id": classroom.id,
+    "teacher": {
+      "username": teacher.username,
+      "name": teacher.name,
+      "firstname": teacher.firstname,
+      "id": teacher.id
+    },
+    "students": [{
+      "id": student.id,
+      "name": student.name,
+      "firstname": student.firstname,
+      "username": student.username
+    } for student in students]
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/teacher/add_student', methods=['POST'])
+@teacher
+def teacher_add_student():
+  data = request.get_json()
+  try:
+    # Create new student account
+    student = generate_user(data, ROLES['student'], current_user.classroom, current_user.school)
+    db.session.add(student)
+
+    db.session.commit()
+    return jsonify({
+      'id': student.id,
+      'firstname': student.firstname,
+      'name': student.name,
+      'username': student.username
+    }), 200
+
+  except:
+    return jsonify(ERRORS['INVALID_ARGS']), 400
+
+
+@app.route('/api/teacher/get_student_infos/<int:classroom_id>/<string:student_username>')
+@teacher
+def teacher_get_student_infos(classroom_id, student_username):
+  if current_user.classroom.id != classroom_id:
+    return jsonify(ERRORS["UNAUTHORIZED"]), 403
+  
+  student = User.query.filter_by(classroom=current_user.classroom, username=student_username).first()
+  if not student:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  skills_infos, total_items, total_validated_items = get_validated_skills(student, current_user.school)
+
+  res = {
+    "is_allowed": True,
+    "id": student.id,
+    "name": student.name,
+    "firstname": student.firstname,
+    "skills": skills_infos,
+    "total_items": total_items,
+    "total_validated_items": total_validated_items
+  }
+
+  return jsonify(res), 200
+
+
+@app.route('/api/teacher/validate_complex_item', methods=['POST'])
+@teacher
+def teacher_validate_complex_item():
+  data = request.get_json()
+  try:
+    student = User.query.filter_by(classroom=current_user.classroom, username=data['student_username']).first()
+    new_value_item = data['item']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  validated_subitems = []
+  for subitem in new_value_item['subitems']:
+    if subitem['validation']:
+      validated_subitems.append(subitem['id'])
+
+  item = Item.query.filter_by(id=new_value_item['id']).first()
+  validation = Validation.query.filter_by(item=item, user=student).first()
+
+  if validation and not new_value_item['validation']:
+    db.session.delete(validation)
+  
+  elif not validation and new_value_item['validation']:
+    validation = Validation(user=student, item=item)
+    if new_value_item['validation']['status'] == 0:
+      validation.validated_subitems = str(validated_subitems)
+      validation.status = 0
+    elif new_value_item['validation']['status'] == 1:
+      validation.validated_subitems = str(validated_subitems)
+      validation.date = new_value_item['validation']['date']
+      validation.status = 1
+
+  elif validation and new_value_item['validation']:
+    validation.status = new_value_item['validation']['status']
+    validation.date = new_value_item['validation']['date']
+    validation.validated_subitems = str(validated_subitems)
+
+  db.session.commit()
+  return jsonify(SUCCESS["EDIT"]), 200
+
+
+@app.route('/api/teacher/validate_simple_item', methods=['POST'])
+@teacher
+def teacher_validate_simple_item():
+  data = request.get_json()
+  try:
+    student = User.query.filter_by(classroom=current_user.classroom, username=data['student_username']).first()
+    new_value_item = data['item']
+  except:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  item = Item.query.filter_by(id=new_value_item['id']).first()
+  validation = Validation.query.filter_by(item=item, user=student).first()
+
+  if validation and not new_value_item['validation']:
+    db.session.delete(validation)
+  
+
+
+  elif not validation and new_value_item['validation']:
+    validation = Validation(user=student, item=item)
+    if new_value_item['validation']['status'] == 0:
+      validation.status = 0
+    elif new_value_item['validation']['status'] == 1:
+      validation.date = new_value_item['validation']['date']
+      validation.status = 1
+
+  elif validation and new_value_item['validation']:
+    validation.status = new_value_item['validation']['status']
+    validation.date = new_value_item['validation']['date']
+
+  db.session.commit()
+  return jsonify(SUCCESS["EDIT"]), 200
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+# Student Routes
+@app.route('/api/student/get_infos')
+@student
+def student_get_infos():
+  student = current_user
+  if not student:
+    return jsonify(ERRORS["INVALID_ARGS"]), 400
+  
+  skills_infos, total_items, total_validated_items = get_validated_skills(student, current_user.school)
+
+  res = {
+    "is_allowed": True,
+    "id": student.id,
+    "name": student.name,
+    "firstname": student.firstname,
+    "skills": skills_infos,
+    "total_items": total_items,
+    "total_validated_items": total_validated_items
+  }
+
+  return jsonify(res), 200
 
 
 
