@@ -58,6 +58,7 @@ const Navbar = props => {
           <MenuItem onClick={() => props.history.push('/admin')}>Gérer l'école</MenuItem>
           <MenuItem onClick={() => props.history.push('/admin/classrooms')}>Gérer les classes</MenuItem>
           <MenuItem onClick={() => props.history.push('/admin/users')}>Gérer les utilisateurs</MenuItem>
+          <MenuItem onClick={() => props.history.push('/admin/skills')}>Gérer les compétences</MenuItem>
         </Menu>
         
   
@@ -85,6 +86,7 @@ const Navbar = props => {
         >
           <MenuItem onClick={() => props.history.push('/super_admin')}>Gérer le site</MenuItem>
           <MenuItem onClick={() => props.history.push('/super_admin/schools')}>Gérer les écoles</MenuItem>
+          <MenuItem onClick={() => props.history.push('/super_admin/skills')}>Gérer les compétences</MenuItem>
         </Menu>
         
   

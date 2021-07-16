@@ -371,6 +371,9 @@ def super_admin_delete_school():
   
   with db.session.no_autoflush:
     for user in school_to_delete.users:
+      user_validations = Validation.query.filter_by(user=user).all()
+      for validation in user_validations:
+        db.session.delete(validation)
       db.session.delete(user)
     
     for classroom in school_to_delete.classrooms:
@@ -536,7 +539,10 @@ def super_admin_delete_item():
 
   try:
     item = Item.query.filter_by(id=data['id']).first()
-    image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
+    try:
+      image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
+    except:
+      pass
   except:
     return jsonify(ERRORS["INVALID_ARGS"]), 400
   
@@ -1136,11 +1142,13 @@ def admin_delete_item():
   if item.scope == 100:
     db.session.delete(item_connection)
   else:
-    image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
-    if image:
-      db.session.delete(item)
-    db.session.delete(image)
+    try:
+      image = ItemImage.query.filter_by(id=item.image_url.split('/')[-1]).first()
+      db.session.delete(image)
+    except:
+      pass
     db.session.delete(item_connection)
+    db.session.delete(item)
   db.session.commit()
   return jsonify(SUCCESS["DELETE"]), 200
 

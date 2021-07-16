@@ -2,6 +2,7 @@ import { Grid } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { LoadingItem, LoadingPage } from '../../Components/Loading';
 import Navbar from '../../Components/Navbar';
+import Searchbar from '../../Components/SearchBar';
 import { AddSkill, Skill } from '../../Components/Skills/SuperAdminSkill';
 import { BlocPage } from '../../Styles/Divs';
 import { H1 } from '../../Styles/Titles';
@@ -12,6 +13,7 @@ const SuperAdminSkills = props => {
   const [globalPageHasLoading, setGlobalPageHasLoading] = useState(false);
   const [skills, setSkills] = useState(null);
   const [addLoading, setAddLoading] = useState(false);
+  const [searchField, setSearchField] = useState('');
 
   
 
@@ -49,6 +51,26 @@ const SuperAdminSkills = props => {
 
   }, [props.history])
 
+  const includesChar = e => {
+    if (e.name) {
+      if (`${e.name.toLowerCase()}`.includes(searchField.toLowerCase())) {
+        return e
+      } else {
+        for (let subskill of e.subskills) {
+          if (`${subskill.name.toLowerCase()}`.includes(searchField.toLowerCase())) {
+            return e
+          } else {
+            for (let item of subskill.items) {
+              if (`${item.label.toLowerCase()}`.includes(searchField.toLocaleLowerCase())) {
+                return e
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   if (globalPageHasLoading) {
     return (
       <BlocPage>
@@ -58,10 +80,12 @@ const SuperAdminSkills = props => {
           </Grid>
         </Grid>
 
+        <Searchbar onChangeFunction={e => setSearchField(e.target.value)} value={searchField} />
+
         {/* Liste des compétences */}
         <Grid container>
           <Grid item xs={12} align="center">
-            {skills.length > 0 && skills.map(skill => {
+            {skills.length > 0 && skills.filter(e => includesChar(e)).map(skill => {
               return <Skill skill={skill} key={skill.id} setSkills={setSkills} role={1000}/>
             })}
             {skills.length === 0 &&

@@ -209,7 +209,7 @@ const Item = props => {
     if (confirmation) {
 
       props.setItems(prev => [...prev].filter(item_ => item_.id !== item.id))
-      props.role === 100 && props.setFreeItems(prev => [...prev, item.label])
+      props.role === 100 && item.scope === 100 && props.setFreeItems(prev => [...prev, item.label])
 
       let requestParams = {
         method: "POST",
