@@ -567,7 +567,7 @@ const AddItem = props => {
                 value="existing" 
                 control={<Radio style={{color: "#ffb535"}} />} 
                 label="Existant"
-                disabled={props.freeItems.length > 0 ? false : true}
+                disabled={props.freeItems && props.freeItems.length > 0 ? false : true}
               />
             }
             
